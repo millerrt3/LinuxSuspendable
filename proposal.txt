@@ -1,0 +1,65 @@
+CSE 522--Final Project Proposal
+
+Robert Miller & Cameron Whipple
+
+
+Proposal:
+
+Opt-in suspension system for running processes (allowing their state to be saved and resumed at a
+later time).
+
+
+Purpose:
+
+This system would allow a process to be saved to be executed later. This could enable a process to
+be moved from one machine to another, or it could allow a process to be 'stopped' (to free up CPU
+resources, for instance) without losing any progress (e.g. resuming the process would bring it back
+up exactly where it had left off).
+
+
+Kernel Modifications:
+
+We intend to implement this functionality with two signals (possibly SIGUSR1 and SIGUSR2, but we
+may decide to create custom signals), one of which alerts a process that it is about to be
+suspended--giving it time to clean up any state that it needs to--and another which alerts it that
+it is being resumed.
+These signals would be handled within a userspace API which we will write: the signal handlers will
+call out to functions within the process (passed to the API as function pointers) to allow the
+processes developers to handle suspend/resume; if no signal handlers are in place, the suspension
+will be canceled (to preserve backwards compatibility).
+Once the suspension signal has been handled, we will assume that any outstanding state has been
+cleaned up and that all that remains to be done is to save the memory state of the process. The
+process will be prevented from being rescheduled as we copy its register, stack, and dynamic memory
+state into one or more files.
+To resume a process, we would load these files back into memory, rebuild the task struct, and send
+a 'resume' signal to the process before rescheduling it. The process would be responsible for
+reacquiring any resources it needs in the 'resume' signal handler, and would then be able to
+continue as if nothing had happened.
+
+
+Test Cases:
+
+We would need to test at least three cases:
+  Signaling processes which do not support suspension (to ensure that the suspension is cancelled)
+  Signaling a process which DOES support suspension
+  Signaling a process which supports suspension, but has marked that it cannot be suspended at that
+    time
+
+
+Schedule:
+
+  Week 1:
+    Setting up signals
+      Build placeholder uspace API
+      Build placeholder kernel module
+      Send signals to uspace and handle them accordingle
+
+  Week 2:
+    Suspend
+      Save process state
+      Remove process from task list
+
+  Week 3:
+    Resume
+      Restore state
+      Add process to task list
