@@ -11,22 +11,22 @@
 // ----- Function Prototypes
 static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count);
-static ssize_t restore_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
-static ssize_t restore_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count);
+static ssize_t filename_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
+static ssize_t filename_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count);
 
 static struct kobject *pid_kobj;
 static pid_t pid_to_suspend = 0;
-static char restore_filename[ FILENAME_MAX_SIZE ];
+static char filename[ FILENAME_MAX_SIZE ];
 
 static struct kobj_attribute suspend_attribute =
 	__ATTR(pid_to_suspend, 0664, pid_show, pid_store);
 	
-static struct kobj_attribute restore_attribute =
-	__ATTR(restore_filename, 0664, restore_show, restore_store );
+static struct kobj_attribute filename_attribute =
+	__ATTR(filename, 0664, filename_show, filename_store );
 	
 static struct attribute *attrs[] = {
 	&suspend_attribute.attr,
-	&restore_attribute.attr,
+	&filename_attribute.attr,
 	NULL,	/* need to NULL terminate the list of attributes */
 };
 
@@ -59,7 +59,7 @@ static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 	real_pid = find_vpid(pid_to_suspend);
 	if (real_pid == NULL)
 	{
-		printk(KERN_WARNING "VPID translation failed\n");
+		printk(KERN_WARNING "linux_suspendable->VPID translation failed\n");
 		return count;
 	}
 
@@ -67,7 +67,7 @@ static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 	pidTask = pid_task(real_pid, PIDTYPE_PID);
 	if (real_pid == NULL)
 	{
-		printk(KERN_WARNING "PID task locating failed\n");
+		printk(KERN_WARNING "linux_suspendable->PID task locating failed\n");
 		return count;
 	}
 #endif
@@ -76,20 +76,21 @@ static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 
 }
 
-static ssize_t restore_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t filename_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	return 0;
 }
 
-static ssize_t restore_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t filename_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	printk( KERN_DEBUG "linux_suspendable->filename: %s\n", buf );
 	
 	// clears buffer
-	memset( restore_filename, 0, FILENAME_MAX_SIZE );
+	memset( filename, 0, FILENAME_MAX_SIZE );
 	
 	// copies the filename
-	strncpy( restore_filename, buf, FILENAME_MAX_SIZE );
+	strncpy( filename, buf, FILENAME_MAX_SIZE );
+	
+	printk( KERN_DEBUG "linux_suspendable->filename: %s\n", filename );
 	
 	return count;
 }
