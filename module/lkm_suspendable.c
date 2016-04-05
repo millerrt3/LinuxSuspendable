@@ -44,8 +44,7 @@ static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char 
 static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	int sv = 0;
-	struct pid *real_pid = 0;
-	struct task_struct* pidTask = 0;
+	
 
 	// convert string to virtual pid
 	sv = kstrtoint(buf, 10, &pid_to_suspend);
@@ -53,24 +52,10 @@ static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 		return sv;
 		
 	printk(KERN_DEBUG "linux_suspendable->PID=%d\n", pid_to_suspend );
-
-#if 0
-	// Convert from virtual to real PID
-	real_pid = find_vpid(pid_to_suspend);
-	if (real_pid == NULL)
-	{
-		printk(KERN_WARNING "linux_suspendable->VPID translation failed\n");
-		return count;
-	}
-
-	// Get the task struct associated with the provided PID
-	pidTask = pid_task(real_pid, PIDTYPE_PID);
-	if (real_pid == NULL)
-	{
-		printk(KERN_WARNING "linux_suspendable->PID task locating failed\n");
-		return count;
-	}
-#endif
+	
+	// TODO - Check module state to see if a suspension already in progress
+	
+	// TODO - Attempt to send signal
 	
 	return count;
 
