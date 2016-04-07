@@ -18,11 +18,11 @@
 typedef enum
 {
 
-  OK          =  0, /**< Function was successful */
-  ERROR       = -1, /**< An unknown error occurred */
-  INVALID_PID = -2, /**< Invalid PID was provided or the PID is not currently active */
-  INVALID_ARG = -3, /**< Invalid argument provided to the function */
-
+  OK               =  0, /**< Function was successful */
+  ERROR            = -1, /**< An unknown error occurred */
+  INVALID_PID      = -2, /**< Invalid PID was provided or the PID is not currently active */
+  INVALID_ARG      = -3, /**< Invalid argument provided to the function */
+  SIG_INSTALL_FAIL = -4, /**< Installation of a singal handler failed */
 } Status;
 
 // Values to enable/disable suspension
@@ -31,7 +31,7 @@ typedef enum
   ENABLED,
   DEFERRED,
   DISABLED,
-}SuspensionMode;
+} SuspensionMode;
 
 typedef enum
 {
