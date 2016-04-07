@@ -10,11 +10,6 @@
 
 #define FILENAME_MAX_SIZE 200
 
-#define ARM_SIGUSR1 (0x0000000a)
-#define ARM_SIGUSR2 (0x0000000c)
-#define SUSPEND_SIGNAL ( ARM_SIGUSR1 )
-#define RESTORE_SIGNAL ( ARM_SIGUSR2 )
-
 // ----- Function Prototypes
 static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
 static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count);

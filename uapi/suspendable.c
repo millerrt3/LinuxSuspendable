@@ -30,12 +30,13 @@ void setSuspensionMode(SuspensionMode mode)
 
 static void suspendSigHandler(int signo)
 {
-  if (signo != SIGUSR1)
+  if (signo != SUSPEND_SIGNAL)
     return;
 
   if (suspend != NULL && (*suspend)() == OK)
   {
     // TODO call out to kernel module
+    //   Write pid to virtual file system (for suspend)
   }
   else
   {
@@ -46,12 +47,13 @@ static void suspendSigHandler(int signo)
 
 static void resumeSigHandler(int signo)
 {
-  if (signo != SIGUSR2)
+  if (signo != RESTORE_SIGNAL)
     return;
 
   if (resume != NULL && (*resume)() == OK)
   {
     // TODO call out to kernel module
+    //   Write pid to virtual file system (for restore)
   }
   else
   {
@@ -63,9 +65,9 @@ static void resumeSigHandler(int signo)
 int initSuspendableSystem(int (*suspendSig)(), int (*resumeSig)())
 {
   // Install signal handlers
-  if (signal(SIGUSR1, suspendSigHandler) == SIG_ERR)
+  if (signal(SUSPEND_SIGNAL, suspendSigHandler) == SIG_ERR)
     return SIG_INSTALL_FAIL;
-  if (signal(SIGUSR2, resumeSigHandler) == SIG_ERR)
+  if (signal(RESTORE_SIGNAL, resumeSigHandler) == SIG_ERR)
     return SIG_INSTALL_FAIL;
 
   // Install the user-defined handlers

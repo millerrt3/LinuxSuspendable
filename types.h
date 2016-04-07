@@ -9,6 +9,17 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
+
+#define ARM_SIGUSR1 (0x0000000a)
+#define ARM_SIGUSR2 (0x0000000c)
+
+
+typedef enum
+{
+  SUSPEND_SIGNAL = ARM_SIGUSR1,
+  RESTORE_SIGNAL = ARM_SIGUSR2,
+} Signals;
+
 /**
  * @brief Represents possible return codes from functions within the module
  *
