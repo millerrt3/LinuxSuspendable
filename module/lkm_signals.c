@@ -50,7 +50,7 @@ Status kill_from_kernelspace( int32_t pid_id, int32_t signal )
 	
 	// TODO - determine whether targetted pid is in critical region; if yes then return appropriate error code
 	
-	// TODO - build siginfo structure
+	// build siginfo structure
 	memset( &info, 0, sizeof( info ) );
 	info.si_signo = signal;
 	info.si_code = 0;

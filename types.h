@@ -33,4 +33,23 @@ typedef enum
   DISABLED,
 }SuspensionMode;
 
+typedef enum
+{
+  SUSPEND_PROCESS,
+  RESTORE_PROCESS,
+  SUSPEND_COMPLETE, /**< The processes suspend handler has completed */
+  RESTORE_COMPLETE, /**< The processes restore handler has completed */
+  MODE_UPDATE,      /**< The suspension mode for the process has changed */
+
+} LKM_Command;
+
+typedef struct
+{
+
+  LKM_Command cmd;
+  int proc_id;
+  int data;
+
+} LKM_Operation;
+
 #endif

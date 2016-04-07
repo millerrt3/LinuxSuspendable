@@ -7,6 +7,9 @@
  * Including this API will 'opt in' to the kernel functionality for suspending
  *   a running process.
  */
+#ifndef _SUSPENDABLE_H
+#define _SUSPENDABLE_H
+
 #include "types.h"
 
 #include <signal.h>
@@ -24,7 +27,7 @@ static int (*suspend)(void) = NULL;
 static int (*resume)(void) = NULL;
 
 
-void uapi_setSuspensionMode(SuspensionMode mode)
+void setSuspensionMode(SuspensionMode mode)
 {
   currSuspendMode = mode;
   // TODO handle deferred suspensions
@@ -43,6 +46,10 @@ static void uapi_suspendSigHandler(int signo)
   {
     // TODO call out to kernel module
   }
+  else
+  {
+    // TODO handle situation in which the process failed to save state
+  }
 }
 
 /**
@@ -57,6 +64,10 @@ static void uapi_resumeSigHandler(int signo)
   if (resume != NULL && (*resume)() == SUCCESS)
   {
     // TODO call out to kernel module
+  }
+  else
+  {
+    // TODO handle situation in which the process failed to restore state
   }
 }
 
@@ -81,3 +92,5 @@ int initSuspendableSystem(int (*suspendSig)(), int (*resumeSig)())
 
   return SUCCESS;
 }
+
+#endif
