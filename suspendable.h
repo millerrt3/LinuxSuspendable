@@ -7,7 +7,7 @@
  * Including this API will 'opt in' to the kernel functionality for suspending
  *   a running process.
  */
-
+#include "types.h"
 
 #include <signal.h>
 #include <unistd.h>
@@ -17,30 +17,24 @@
 const int SIG_INSTALL_FAILED = -1;
 const int SUCCESS = 0;
 
-
-// Values to enable/disable suspension
-enum SuspensionMode
-{
-  ENABLED,
-  DEFERRED,
-  DISABLED,
-};
-SuspensionMode currSuspendMode = SuspensionMode.DEFERRED;
-
+SuspensionMode currSuspendMode = DEFERRED;
 
 // User-defined portions of the signal handlers
-int (*suspend)(void) = NULL;
-int (*resume)(void) = NULL;
+static int (*suspend)(void) = NULL;
+static int (*resume)(void) = NULL;
 
 
-void setSuspensionMode(SuspensionMode mode)
+void uapi_setSuspensionMode(SuspensionMode mode)
 {
   currSuspendMode = mode;
   // TODO handle deferred suspensions
 }
 
-
-void suspendSigHandler(int signo)
+/**
+ * @brief User API internal signal handler that calls the application
+ *	    provided handler
+ */
+static void uapi_suspendSigHandler(int signo)
 {
   if (signo != SIGUSR1)
     return;
@@ -51,8 +45,11 @@ void suspendSigHandler(int signo)
   }
 }
 
-
-void resumeSigHandler(int signo)
+/**
+ * @brief User API internal signal handler that calls the application
+ *	    provided handler
+ */
+static void uapi_resumeSigHandler(int signo)
 {
   if (signo != SIGUSR2)
     return;
@@ -66,10 +63,13 @@ void resumeSigHandler(int signo)
 
 int initSuspendableSystem(int (*suspendSig)(), int (*resumeSig)())
 {
+
+  printf( "sigusr1=0x%08x, sigusr2=0x%08x\n", SIGUSR1, SIGUSR2 );
+
   // Install signal handlers
-  if (signal(SIGUSR1, suspendSigHandler) == SIG_ERR)
+  if (signal(SIGUSR1, uapi_suspendSigHandler) == SIG_ERR)
     return SIG_INSTALL_FAILED;
-  if (signal(SIGUSR2, resumeSigHandler) == SIG_ERR)
+  if (signal(SIGUSR2, uapi_resumeSigHandler) == SIG_ERR)
     return SIG_INSTALL_FAILED;
 
   // Install the user-defined handlers

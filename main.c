@@ -8,10 +8,11 @@
  *   final project for CSE 522 by Robert Miller & Cameron Whipple
  */
 
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
 
- #include <stdio.h>
-
- #include "suspendable.h"
+#include "suspendable.h"
 
 
 int suspendSigHandler()
@@ -30,6 +31,12 @@ int resumeSigHandler()
 
 int main(int argc, char** argv)
 {
+
+  int pid = 0;
+
+  pid = getpid();
+  printf( "pid=%d\n", pid );
+
   int retCode = initSuspendableSystem(&suspendSigHandler, &resumeSigHandler);
   if (retCode != SUCCESS)
   {
@@ -37,7 +44,7 @@ int main(int argc, char** argv)
     return retCode;
   }
 
-  while (true)
+  while (1)
   {
   }
 

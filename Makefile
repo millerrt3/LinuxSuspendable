@@ -3,6 +3,7 @@ MODULE_BASE = $(PWD)/module
 
 all:
 	make -C $(LINUX_BASE) SUBDIRS=$(PWD)/module modules
+	gcc -o app main.c -I.
 	
 clean:
 	rm -f $(MODULE_BASE)/lkm_suspendable.ko
@@ -11,3 +12,5 @@ clean:
 	rm -f $(MODULE_BASE)/lkm_suspendable.mod.o
 	rm -f $(MODULE_BASE)/modules.order
 	rm -f $(MODULE_BASE)/Module.symvers
+	rm -f *.o
+	rm app

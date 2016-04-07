@@ -1,3 +1,5 @@
+#include "lkm_signals.h"
+
 #include <linux/kobject.h>
 #include <linux/string.h>
 #include <linux/sched.h>
@@ -7,6 +9,11 @@
 #include <linux/pid.h>
 
 #define FILENAME_MAX_SIZE 200
+
+#define ARM_SIGUSR1 (0x0000000a)
+#define ARM_SIGUSR2 (0x0000000c)
+#define SUSPEND_SIGNAL ( ARM_SIGUSR1 )
+#define RESTORE_SIGNAL ( ARM_SIGUSR2 )
 
 // ----- Function Prototypes
 static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf);
@@ -34,8 +41,6 @@ static struct attribute_group attr_group = {
 	.attrs = attrs,
 };
 
-
-
 static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	return 0;
@@ -44,6 +49,7 @@ static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char 
 static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	int sv = 0;
+        Status status = OK;
 	
 
 	// convert string to virtual pid
@@ -55,7 +61,12 @@ static ssize_t pid_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 	
 	// TODO - Check module state to see if a suspension already in progress
 	
-	// TODO - Attempt to send signal
+	//  Attempt to send signal
+        status = send_signal_from_kernel( pid_to_suspend, SUSPEND_SIGNAL );
+        if( status != OK )
+        {
+          printk( KERN_WARNING "linux_suspendable->signal send failed; status=0x%08x\n", status );
+        }
 	
 	return count;
 
