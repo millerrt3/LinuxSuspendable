@@ -6,15 +6,10 @@ UAPI_BASE = $(PWD)/uapi
 
 all:
 	make -C $(LINUX_BASE) SUBDIRS=$(MODULE_BASE) modules
-	make -C $(LINUX_BASE) SUBDIRS=$(MODULE_BASE) modules
-	make -C $(LINUX_BASE) SUBDIRS=$(UAPI_BASE) uapi
+	make -C $(LINUX_BASE) SUBDIRS=$(INSPECT_BASE) modules
+	make -C uapi
 	
 clean:
-	rm -f $(MODULE_BASE)/lkm_suspendable.ko
-	rm -f $(MODULE_BASE)/lkm_suspendable.o
-	rm -f $(MODULE_BASE)/lkm_suspendable.mod.c
-	rm -f $(MODULE_BASE)/lkm_suspendable.mod.o
-	rm -f $(MODULE_BASE)/modules.order
-	rm -f $(MODULE_BASE)/Module.symvers
 	rm -f *.o
-	rm app
+	rm -f $(MODULE_BASE)/*.o
+	rm -f $(INSPECT_BASE)/*.o

@@ -1,3 +1,5 @@
+#include "../types.h"
+
 #include <linux/kobject.h>
 #include <linux/string.h>
 #include <linux/sched.h>
@@ -18,16 +20,16 @@ static ssize_t cmd_show(struct kobject *kobj, struct kobj_attribute *attr, char 
 static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
   int sv = 0;
-  Status status = OK; 
+  int local = 0;
 
   // convert string to virtual pid
-  sv = kstrtoint(buf, 10, &pid_to_suspend);
+  sv = kstrtoint(buf, 10, &local);
   if (sv < 0)
     return sv;
     
   // update local pid copy
-  lkm_pid = pid_to_suspend;
-  printk(KERN_DEBUG "linux_inspect->cmd=%d\n", pid_to_suspend );
+  lkm_cmd = local;
+  printk(KERN_DEBUG "linux_inspect->cmd=%d\n", lkm_cmd );
 
   return count;
 }
