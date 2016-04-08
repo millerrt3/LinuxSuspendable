@@ -1,9 +1,11 @@
 # Points to the root of the linux source directory
 LINUX_BASE = ../RPi-Linux-4.1.13/linux/
 MODULE_BASE = $(PWD)/module
+INSPECT_BASE = $(PWD)/inspect
 UAPI_BASE = $(PWD)/uapi
 
 all:
+	make -C $(LINUX_BASE) SUBDIRS=$(MODULE_BASE) modules
 	make -C $(LINUX_BASE) SUBDIRS=$(MODULE_BASE) modules
 	make -C $(LINUX_BASE) SUBDIRS=$(UAPI_BASE) uapi
 	

@@ -19,3 +19,6 @@
 
 alias install='insmod module/linux_suspendable_module.ko'
 alias remove='rmmod linux_suspendable_module'
+
+alias inspect='insmod inspect/linux_inspection_module.ko'
+alias nospect='rmmod linux_inspection_module'
