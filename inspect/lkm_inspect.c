@@ -31,6 +31,14 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
   lkm_cmd = local;
   printk(KERN_DEBUG "linux_inspect->cmd=%d\n", lkm_cmd );
 
+  // TODO - Add processing based on the received command
+  switch( lkm_cmd )
+  {
+    
+    default:
+      printk( KERN_DEBUG "linux_inspect->default\n" );
+  }
+
   return count;
 }
 

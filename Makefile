@@ -8,6 +8,9 @@ all:
 	make -C $(LINUX_BASE) SUBDIRS=$(MODULE_BASE) modules
 	make -C $(LINUX_BASE) SUBDIRS=$(INSPECT_BASE) modules
 	make -C uapi
+
+	# Userspace control process for inspection module
+	make -o inspect/inspect inspect/inspect.c
 	
 clean:
 	rm -f *.o
