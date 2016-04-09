@@ -15,6 +15,14 @@
 // *************************************************************************
 #include "../types.h" // Status
 
+typedef enum 
+{
+	LKM_Read  = 0,
+	LKM_Write = 1,
+} LKM_FilePermission;
+
+typedef struct file* LKM_FILE;
+
 // *************************************************************************
 //                          FUNCTION PROTOTYPES
 // *************************************************************************
@@ -32,6 +40,11 @@
  *
  * @return file descriptor or -1 if an error occurred.
  */
-int lkm_open( const char *pathname, int flags );
+LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission );
+int      lkm_file_write( LKM_FILE file, char *buffer, int size );
+int      lkm_file_read( LKM_FILE file, char *buffer, int size );
+void     lkm_file_close( LKM_FILE file );
+int      lkm_file_sync( LKM_FILE file )
+
 
 #endif
