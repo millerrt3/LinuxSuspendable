@@ -3,3 +3,15 @@
 *.o
 *.cmd
 *.swp
+/build.log
+/inspect/.tmp_versions/linux_inspection_module.mod
+/inspect/Module.symvers
+/inspect/control
+/inspect/inspect
+/inspect/modules.order
+/inspect/uinspect
+/inspect_log.txt
+/module/.tmp_versions/linux_suspendable_module.mod
+/module/Module.symvers
+/module/modules.order
+/uapi/test
