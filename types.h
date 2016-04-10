@@ -63,4 +63,13 @@ typedef struct
 
 } LKM_Operation;
 
+typedef enum
+{
+
+  INS_TEST    = 0,
+  INS_SUSPEND = 1,
+  INS_DUMP    = 2,
+  
+} LKM_InspectCmd;
+
 #endif

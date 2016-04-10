@@ -49,6 +49,7 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 {
   int sv = 0;
   int local = 0;
+  struct task_struct *task_struct_ptr = 0;
 
   // convert string to virtual pid
   sv = kstrtoint(buf, 10, &local);
@@ -63,19 +64,31 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
   switch( lkm_cmd )
   {
 
-    case 1:
-      fd = lkm_open( lkm_filename, O_RDWR );
-      if( fd < 0 )
+    case INS_TEST:
+      printk( KERN_DEBUG "linux_inspect->INS_TEST\n" );
+      printk( KERN_DEBUG "linux_inspect->task_struct_size=%d\n", sizeof(struct task_struct));
+
+      // retrieve pointer for user process
+      task_struct_ptr = lkm_get_task_struct( lkm_pid );
+      if( task_struct_ptr == NULL )
       {
-        printk( KERN_WARNING "linux_inspect->failed to open %s\n", lkm_filename );
-        return count;
+        printk( KERN_WARNING "linux_inspect->invalid pid; %d\n", lkm_pid );
+        break;
       }
 
-      write( fd,  lkm_filename, strlen( lkm_filename ) );
-      close( fd );
+      prink( KERN_DEBUG "linux_inspect(%d)->state=%d\n", lkm_pid, task_struct_ptr->state );
+      // prink( KERN_DEBUG "linux_inspect(%d)->state=%d\n", lkm_pid, task_struct_ptr->state );
 
+      break;
+    case INS_SUSPEND:
+      printk( KERN_DEBUG "linux_inspect->INS_SUSPEND\n" );
+      break;
+    case INS_DUMP:
+      printk( KERN_DEBUG "linux_inspect->INS_DUMP\n" );
+      break;
     default:
       printk( KERN_DEBUG "linux_inspect->default\n" );
+
   }
 
   return count;
@@ -97,6 +110,7 @@ static ssize_t filename_store(struct kobject *kobj, struct kobj_attribute *attr,
   }
 
   // copy filename that was passed
+  // TODO - Look into the use of copy_from_user - necessary?
   memset( lkm_filename, 0, MAX_FILENAME_SIZE );
   memcpy( lkm_filename, buf, copy_amt );
   lkm_filename_set = 1;

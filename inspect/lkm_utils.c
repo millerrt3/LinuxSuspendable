@@ -8,6 +8,43 @@
 #include "../types.h"
 #include "lkm_utils.h"
 
+struct task_struct* lkm_get_task_struct( int32_t pid )
+{
+
+    struct pid *real_pid_ptr = 0;
+    struct task_struct* pid_task_ptr = 0;
+
+    printk( KERN_DEBUG "lkm_get_task_struct->pid=%d\n", pid );
+
+    // acquire read lock for the task_struct area
+    rcu_read_lock();
+
+    // Convert from virtual to real PID
+    real_pid_ptr = find_vpid(pid);
+    if (real_pid_ptr == NULL)
+    {
+        printk(KERN_WARNING "lkm_get_task_struct->VPID translation failed; pid=%d\n", pid );
+        return INVALID_PID;
+    }
+
+    // release lock over the task_struct listing
+    rcu_read_unlock();
+
+    // Get the task struct associated with the provided PID
+    // pid_task - RCU used internally for synchronization with kernel
+    pid_task_ptr = pid_task(real_pid_ptr, PIDTYPE_PID);
+    if (pid_task_ptr == NULL)
+    {
+        printk(KERN_WARNING "lkm_get_task_struct->PID task locating failed; pid=%d\n", pid );
+        return INVALID_PID;
+    }
+    
+    // return
+    return pid_task_ptr;
+    
+}
+
+#if 0
 int lkm_open( const char *pathname, int flags )
 {
 
@@ -112,3 +149,4 @@ int lkm_file_sync( LKM_FILE file )
 	vfs_fsync( file, 0 );
 	return 0;
 }
+#endif

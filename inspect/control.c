@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+#include "../types.h"
+
 int main( int argc, char **args )
 {
 
@@ -58,8 +60,11 @@ int main( int argc, char **args )
 	switch( cmd )
 	{
 
-	  default:
-	    break;
+		case INS_TEST:
+			break;
+
+		default:
+	   		break;
 
 	}
 
@@ -83,6 +88,8 @@ int main( int argc, char **args )
 
 	// close file descriptor the pid
 	close( cmd_fd );
+
+	sleep(5);
 
 	return 0;
 
