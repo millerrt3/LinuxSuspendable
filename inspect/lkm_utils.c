@@ -1,9 +1,15 @@
+#include <linux/fs.h>
+#include <asm/segment.h>
+#include <asm/uaccess.h>
+#include <linux/buffer_head.h>
+
+#if 0
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/syscalls.h>
 #include <linux/fcntl.h>
-#include <asm/uaccess.h>
+#endif
 
 #include "../types.h"
 #include "lkm_utils.h"
@@ -44,6 +50,7 @@ struct task_struct* lkm_get_task_struct( int pid )
     
 }
 
+
 void lkm_print_buffer( void *buffer, int size )
 {
     int index = 0;
@@ -59,40 +66,40 @@ void lkm_print_buffer( void *buffer, int size )
     }
 }
 
-#if 0
-int lkm_open( const char *pathname, int flags )
+
+int lkm_save_to_file( const char *pathname, void *buffer, int size )
 {
 
-	int fd = 0;
-	int rv = 0;
-	mm_segment_t old_fs = 0;
+    LKM_FILE file = 0;
+    int writeAmt = 0;
 
-	printk( KERN_DEBUG "lkm_open->path=%s, flags=0x%08x\n", pathname, flags );
+    printk( KERN_DEBUG "lkm_save_to_file->path=%s, addr=0x%08x, size=%d\n", pathname, (int)buffer, size );
 
-	if( flags != O_RDONLY && flags != O_WRONLY && flags != O_RDWR )
-	{
-		printk( KERN_WARNING "lkm_open->Invalid Argument; flags=0x%08x\n", flags );
-		return -1;
-	}
+    // open file for write
+    file = lkm_file_open( pathname, LKM_Write );
+    if( file == NULL )
+    {
+        printk( KERN_WARNING "lkm_save_to_file->failed to open %s\n", pathname );
+        file = NULL;
+    }
 
-	// retrieve current file descriptor
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+    // write content into the file
+    if( file != NULL )
+    {
+        writeAmt = lkm_file_write( file, buffer, size );
+        if( writeAmt < size )
+        {
+            printk( KERN_WARNING "lkm_save_to_file->failed to write; actual=%d, expected=%d\n", writeAmt, size );
+        }
+    }
 
-	// opens the file
-	fd = sys_open( pathname, flags, 0 );
-	if( fd < 0 )
-	{
-		printk( KERN_WARNING "lkm_open->Open Failed; sv=0x%08x\n", fd );
-	}
+    if( file != NULL )
+        lkm_file_close( file );
 
-	// reinstall the old file system
-	set_fs(old_fs);
-
-	// return fd
-	return fd;
+    return writeAmt;
 
 }
+
 
 LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission )
 {
@@ -121,10 +128,11 @@ LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission )
     return filp;
 }
 
+
 int      lkm_file_write( LKM_FILE file, char *buffer, int size )
 {
 	mm_segment_t oldfs;
-    int ret;
+    int ret = 0;
     unsigned long long offset = 0;
 
     oldfs = get_fs();
@@ -137,31 +145,27 @@ int      lkm_file_write( LKM_FILE file, char *buffer, int size )
 
 }
 
+
 int      lkm_file_read( LKM_FILE file, char *buffer, int size )
 {
 
 	mm_segment_t oldfs;
-    int ret;
+    int ret = 0;
     unsigned long long offset = 0;
 
     oldfs = get_fs();
     set_fs(get_ds());
 
-    ret = vfs_read(file, data, size, &offset);
+    ret = vfs_read(file, buffer, size, &offset);
 
     set_fs(oldfs);
     return ret;
 
 }
 
+
 void     lkm_file_close( LKM_FILE file )
 {
 	filp_close(file, NULL);
 }
 
-int lkm_file_sync( LKM_FILE file )
-{
-	vfs_fsync( file, 0 );
-	return 0;
-}
-#endif

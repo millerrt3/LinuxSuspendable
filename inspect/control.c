@@ -45,8 +45,8 @@ int main( int argc, char **args )
 	}
 
 	// tell the inspection module the pid of this process
-	writeAmt = write( pid_fd, (void*)buffer, 4 );
-	if( writeAmt < 4 )
+	writeAmt = write( pid_fd, (void*)buffer, strlen(buffer) );
+	if( writeAmt < strlen(buffer) )
 	{
 		printf( "ERROR: unable to write into lkm_pid; 0x%08x\n", errno );
 		close(pid_fd);

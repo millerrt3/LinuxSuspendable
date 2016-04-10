@@ -59,6 +59,7 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
   int sv = 0;
   int local = 0;
   struct task_struct *task_struct_ptr = 0;
+  // LKM_FILE file = 0;
 
   // convert string to virtual pid
   sv = kstrtoint(buf, 10, &local);
@@ -84,7 +85,7 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
         break;
       }
 
-      printk( KERN_DEBUG "\n---------------------------------------------\n" );
+      printk( KERN_DEBUG "---------------------------------------------\n" );
       printk( KERN_DEBUG "linux_inspect(%d)->task_struct_size=%d\n", lkm_pid, sizeof(struct task_struct));
       printk( KERN_DEBUG "linux_inspect(%d)->state=%ld\n", lkm_pid, task_struct_ptr->state );
       printk( KERN_DEBUG "linux_inspect(%d)->flags=0x%08x\n", lkm_pid, task_struct_ptr->flags );
@@ -92,6 +93,7 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
       printk( KERN_DEBUG "linux_inspect(%d)->on_cpu=%d\n", lkm_pid, task_struct_ptr->on_cpu );
 
       break;
+
     case INS_SUSPEND:
       printk( KERN_DEBUG "linux_inspect->INS_SUSPEND\n" );
 
@@ -103,12 +105,20 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
         break;
       }
 
+      printk( KERN_DEBUG "---------------------------------------------\n" );
+      printk( KERN_DEBUG "linux_inspect(%d)->task_struct_size=%d\n", lkm_pid, sizeof(struct task_struct));
+      printk( KERN_DEBUG "linux_inspect(%d)->state=%ld\n", lkm_pid, task_struct_ptr->state );
+      printk( KERN_DEBUG "linux_inspect(%d)->flags=0x%08x\n", lkm_pid, task_struct_ptr->flags );
+      printk( KERN_DEBUG "linux_inspect(%d)->ptrace=0x%08x\n", lkm_pid, task_struct_ptr->ptrace );
+      printk( KERN_DEBUG "linux_inspect(%d)->on_cpu=%d\n", lkm_pid, task_struct_ptr->on_cpu );
+
+      // copy task struct contents
       if( lkm_state == STATE_EMPTY && lkm_struct_memory != NULL )
         memcpy( lkm_struct_memory, task_struct_ptr, sizeof(struct task_struct) );
       else
-        printk( KERN_WARNING "linux_inspect->process already suspended\n" );
+        printk( KERN_WARNING "linux_inspect->a process is already suspended\n" );
 
-      lkm_print_buffer( lkm_struct_memory, sizeof(struct task_struct) );
+      lkm_save_to_file( "task_struct_dump.bin", lkm_struct_memory,sizeof(struct task_struct) );
 
       break;
     case INS_DUMP:
