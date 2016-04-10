@@ -88,8 +88,12 @@ int main( int argc, char **args )
 
 	// close file descriptor the pid
 	close( cmd_fd );
-
-	sleep(5);
+	int index = 0;
+	for( index = 0; index < 5; index++ )
+	{
+		printf( "Loop: %d\n", index );
+		sleep(1);
+	}
 
 	return 0;
 

@@ -8,7 +8,7 @@
 #include "../types.h"
 #include "lkm_utils.h"
 
-struct task_struct* lkm_get_task_struct( int32_t pid )
+struct task_struct* lkm_get_task_struct( int pid )
 {
 
     struct pid *real_pid_ptr = 0;
@@ -24,7 +24,7 @@ struct task_struct* lkm_get_task_struct( int32_t pid )
     if (real_pid_ptr == NULL)
     {
         printk(KERN_WARNING "lkm_get_task_struct->VPID translation failed; pid=%d\n", pid );
-        return INVALID_PID;
+        return NULL;
     }
 
     // release lock over the task_struct listing
@@ -36,12 +36,27 @@ struct task_struct* lkm_get_task_struct( int32_t pid )
     if (pid_task_ptr == NULL)
     {
         printk(KERN_WARNING "lkm_get_task_struct->PID task locating failed; pid=%d\n", pid );
-        return INVALID_PID;
+        return NULL;
     }
     
     // return
     return pid_task_ptr;
     
+}
+
+void lkm_print_buffer( void *buffer, int size )
+{
+    int index = 0;
+    char *pBuf = (char*)buffer;
+
+    for( index = 0; index < size; index++ )
+    {
+        printk( KERN_DEBUG "%02x ", pBuf[index] );
+        if( index != 0 && (index % 20)==0 )
+        {
+            printk( KERN_DEBUG "\n" );
+        }
+    }
 }
 
 #if 0

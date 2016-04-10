@@ -15,6 +15,8 @@
 // *************************************************************************
 #include "../types.h" // Status
 
+#include <linux/sched.h>
+
 #if 0
 typedef enum 
 {
@@ -29,7 +31,8 @@ typedef enum
 //                          FUNCTION PROTOTYPES
 // *************************************************************************
 
-struct task_struct* lkm_get_task_struct( int32_t pid );
+struct task_struct* lkm_get_task_struct( int pid );
+void lkm_print_buffer( void *buffer, int size );
 
 #if 0
 LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission );

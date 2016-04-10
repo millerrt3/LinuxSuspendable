@@ -8,14 +8,23 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/pid.h>
+#include <linux/slab.h>
 
 #define MAX_FILENAME_SIZE 200
+
+typedef enum
+{
+  STATE_EMPTY = 0,
+  STATE_FULL  = 1,
+} LKM_State;
 
 // ----- Global Variables
 static int lkm_pid = 0;
 static int lkm_cmd = 0;
+static int lkm_state = STATE_EMPTY;
 static int lkm_filename_set = 0;
 static char lkm_filename[MAX_FILENAME_SIZE];
+static void *lkm_struct_memory = 0;
 
 static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -66,7 +75,6 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 
     case INS_TEST:
       printk( KERN_DEBUG "linux_inspect->INS_TEST\n" );
-      printk( KERN_DEBUG "linux_inspect->task_struct_size=%d\n", sizeof(struct task_struct));
 
       // retrieve pointer for user process
       task_struct_ptr = lkm_get_task_struct( lkm_pid );
@@ -76,12 +84,32 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
         break;
       }
 
-      prink( KERN_DEBUG "linux_inspect(%d)->state=%d\n", lkm_pid, task_struct_ptr->state );
-      // prink( KERN_DEBUG "linux_inspect(%d)->state=%d\n", lkm_pid, task_struct_ptr->state );
+      printk( KERN_DEBUG "\n---------------------------------------------\n" );
+      printk( KERN_DEBUG "linux_inspect(%d)->task_struct_size=%d\n", lkm_pid, sizeof(struct task_struct));
+      printk( KERN_DEBUG "linux_inspect(%d)->state=%ld\n", lkm_pid, task_struct_ptr->state );
+      printk( KERN_DEBUG "linux_inspect(%d)->flags=0x%08x\n", lkm_pid, task_struct_ptr->flags );
+      printk( KERN_DEBUG "linux_inspect(%d)->ptrace=0x%08x\n", lkm_pid, task_struct_ptr->ptrace );
+      printk( KERN_DEBUG "linux_inspect(%d)->on_cpu=%d\n", lkm_pid, task_struct_ptr->on_cpu );
 
       break;
     case INS_SUSPEND:
       printk( KERN_DEBUG "linux_inspect->INS_SUSPEND\n" );
+
+      // retrieve pointer for user process
+      task_struct_ptr = lkm_get_task_struct( lkm_pid );
+      if( task_struct_ptr == NULL )
+      {
+        printk( KERN_WARNING "linux_inspect->invalid pid; %d\n", lkm_pid );
+        break;
+      }
+
+      if( lkm_state == STATE_EMPTY && lkm_struct_memory != NULL )
+        memcpy( lkm_struct_memory, task_struct_ptr, sizeof(struct task_struct) );
+      else
+        printk( KERN_WARNING "linux_inspect->process already suspended\n" );
+
+      lkm_print_buffer( lkm_struct_memory, sizeof(struct task_struct) );
+
       break;
     case INS_DUMP:
       printk( KERN_DEBUG "linux_inspect->INS_DUMP\n" );
@@ -152,6 +180,14 @@ static int lkm_init(void)
 
   // clear filename
   memset( lkm_filename, 0, MAX_FILENAME_SIZE );
+
+  // reserve memory for storing suspended processes state
+  lkm_struct_memory = (void*)kmalloc( sizeof( struct task_struct ), GFP_KERNEL );
+  if( lkm_struct_memory == NULL )
+  {
+    printk( KERN_WARNING "lkm_inspect->insufficient memory; amt=%d\n", sizeof(struct task_struct) );
+    return -ENOMEM;
+  }
 	
   // creates directory for interacting with module
   pid_kobj = kobject_create_and_add("linux_inspect", kernel_kobj);
@@ -171,6 +207,8 @@ static void lkm_exit(void)
 {
   printk(KERN_DEBUG "linux_inspect->removed\n");
   kobject_put(pid_kobj);
+
+  kfree(lkm_struct_memory);
 }
 
 // Sets up callback functions
