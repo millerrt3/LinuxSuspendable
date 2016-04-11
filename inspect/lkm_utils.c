@@ -2,6 +2,7 @@
 #include <asm/segment.h>
 #include <asm/uaccess.h>
 #include <linux/buffer_head.h>
+#include <linux/pid.h>
 
 #if 0
 #include <linux/kernel.h>
@@ -169,3 +170,87 @@ void     lkm_file_close( LKM_FILE file )
 	filp_close(file, NULL);
 }
 
+
+Status lkm_activate_pid( struct task_struct *task_ptr )
+{
+
+    printk( KERN_DEBUG "lkm_activate_pid\n" );
+
+    return ERROR;
+}
+
+
+Status lkm_deactivate_pid( struct task_struct *task_ptr )
+{
+
+    Status status = OK;
+
+    printk( KERN_DEBUG "lkm_deactivate_pid\n" );
+
+    // detach_pid is not exported within kernel
+    // detach_pid( task_ptr, PIDTYPE_PID );
+
+    // TODO - acquire write lock for tasklist_lock
+    // TODO - disable CPU interrupts
+    // TODO - mark process as uninterruptible and unschedulable - removes from run queue?
+
+    // TODO - remove process from run queue
+    // del_from_runqueue();
+
+    // remove from pid hash
+    status = lkm_remove_from_pidhash( task_ptr );
+
+    // remove from task list
+    status = lkm_remove_from_list( task_ptr );
+
+    // TODO - release write lock
+
+    return ERROR;
+
+}
+
+Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
+{
+
+    // Adapted from __change_pid(...) in linux kernel - http://lxr.free-electrons.com/source/kernel/pid.c#L395
+    struct pid_link *link_ptr = &(task_ptr->pids[PIDTYPE_PID]);
+    struct pid *pid_ptr = link_ptr->pid;
+    int tmp = 0;
+
+    hlist_del_rcu( &(link_ptr->node) );
+    link->pid = NULL;
+
+    for (tmp = PIDTYPE_MAX; --tmp >= 0; )
+    {
+        if (!hlist_empty(&pid_ptr->tasks[tmp]))
+            return;
+    }
+
+    return OK;
+}
+
+/**
+ * @brief Removes the provided process from the circular linked list
+ *
+ * @warning
+ *  WRITE lock should be acquired for tasklist_lock prior to calling
+ *  this function.
+ */
+Status lkm_remove_from_list( struct task_struct *task_ptr )
+{
+
+    if( task_ptr == NULL )
+    {
+        return INVALID_ARG;
+    }
+
+    // acquire pointers to surrounding items in list
+    struct list_head *next = task_ptr->tasks.next;
+    struct list_head *prev = task_ptr->tasks.prev;
+
+    next->prev = prev;
+    prev->next = next;
+
+    return OK;
+
+}

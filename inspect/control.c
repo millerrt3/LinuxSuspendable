@@ -60,7 +60,7 @@ int main( int argc, char **args )
 	switch( cmd )
 	{
 
-		case INS_TEST:
+		case INS_INFO:
 			break;
 
 		default:

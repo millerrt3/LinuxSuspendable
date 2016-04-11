@@ -66,9 +66,8 @@ typedef struct
 typedef enum
 {
 
-  INS_TEST    = 0,
+  INS_INFO    = 0,
   INS_SUSPEND = 1,
-  INS_DUMP    = 2,
   
 } LKM_InspectCmd;
 

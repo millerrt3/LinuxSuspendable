@@ -24,7 +24,7 @@ static int lkm_cmd = 0;
 static int lkm_state = STATE_EMPTY;
 static int lkm_filename_set = 0;
 static char lkm_filename[MAX_FILENAME_SIZE];
-static void *lkm_struct_memory = 0;
+static void *lkm_task_struct_contents = 0;
 
 static ssize_t pid_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -59,6 +59,8 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
   int sv = 0;
   int local = 0;
   struct task_struct *task_struct_ptr = 0;
+  int file_size = 0;
+  Status status = 0;
   // LKM_FILE file = 0;
 
   // convert string to virtual pid
@@ -70,12 +72,12 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
   lkm_cmd = local;
   printk(KERN_DEBUG "linux_inspect->cmd=%d\n", lkm_cmd );
 
-  // TODO - Add processing based on the received command
+  // perform operations based on received command
   switch( lkm_cmd )
   {
 
-    case INS_TEST:
-      printk( KERN_DEBUG "linux_inspect->INS_TEST\n" );
+    case INS_INFO:
+      printk( KERN_DEBUG "linux_inspect->INS_INFO\n" );
 
       // retrieve pointer for user process
       task_struct_ptr = lkm_get_task_struct( lkm_pid );
@@ -95,9 +97,10 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
       break;
 
     case INS_SUSPEND:
+
       printk( KERN_DEBUG "linux_inspect->INS_SUSPEND\n" );
 
-      // retrieve pointer for user process
+      // retrieve pointer to task_struct
       task_struct_ptr = lkm_get_task_struct( lkm_pid );
       if( task_struct_ptr == NULL )
       {
@@ -107,23 +110,38 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
 
       printk( KERN_DEBUG "---------------------------------------------\n" );
       printk( KERN_DEBUG "linux_inspect(%d)->task_struct_size=%d\n", lkm_pid, sizeof(struct task_struct));
+      printk( KERN_DEBUG "linux_inspect(%d)->comm=%s\n", lkm_pid, task_struct_ptr->comm );
       printk( KERN_DEBUG "linux_inspect(%d)->state=%ld\n", lkm_pid, task_struct_ptr->state );
       printk( KERN_DEBUG "linux_inspect(%d)->flags=0x%08x\n", lkm_pid, task_struct_ptr->flags );
       printk( KERN_DEBUG "linux_inspect(%d)->ptrace=0x%08x\n", lkm_pid, task_struct_ptr->ptrace );
       printk( KERN_DEBUG "linux_inspect(%d)->on_cpu=%d\n", lkm_pid, task_struct_ptr->on_cpu );
+      printk( KERN_DEBUG "linux_inspect(%d)->static_priority=%d\n", lkm_pid, task_struct_ptr->static_prio );
+      printk( KERN_DEBUG "linux_inspect(%d)->thread->address=0x%08x\n", lkm_pid, task_struct_ptr->thread->address );
 
-      // copy task struct contents
-      if( lkm_state == STATE_EMPTY && lkm_struct_memory != NULL )
-        memcpy( lkm_struct_memory, task_struct_ptr, sizeof(struct task_struct) );
+      // copy task_struct contents
+      if( lkm_state == STATE_EMPTY && lkm_task_struct_contents != NULL )
+        memcpy( lkm_task_struct_contents, task_struct_ptr, sizeof(struct task_struct) );
       else
         printk( KERN_WARNING "linux_inspect->a process is already suspended\n" );
 
-      lkm_save_to_file( "task_struct_dump.bin", lkm_struct_memory,sizeof(struct task_struct) );
+      // deactivate process
+      status = lkm_deactivate_pid( task_struct_ptr );
+      if( status != OK )
+      {
+        printk( KERN_WARNING "linux_inspect->deactivation failed on pid %d\n", lkm_pid );
+        return count;
+      }
+
+      // export task struct contents to file
+      file_size = lkm_save_to_file( "task_struct_dump.bin", lkm_task_struct_contents,sizeof(struct task_struct) );
+      if( file_size < 0 )
+      {
+        printk( KERN_WARNING "linux_inspect->failed to export task_struct contents to %s\n", "task_struct_dump.bin" );
+        return count;
+      }
 
       break;
-    case INS_DUMP:
-      printk( KERN_DEBUG "linux_inspect->INS_DUMP\n" );
-      break;
+
     default:
       printk( KERN_DEBUG "linux_inspect->default\n" );
 
@@ -192,8 +210,8 @@ static int lkm_init(void)
   memset( lkm_filename, 0, MAX_FILENAME_SIZE );
 
   // reserve memory for storing suspended processes state
-  lkm_struct_memory = (void*)kmalloc( sizeof( struct task_struct ), GFP_KERNEL );
-  if( lkm_struct_memory == NULL )
+  lkm_task_struct_contents = (void*)kmalloc( sizeof( struct task_struct ), GFP_KERNEL );
+  if( lkm_task_struct_contents == NULL )
   {
     printk( KERN_WARNING "lkm_inspect->insufficient memory; amt=%d\n", sizeof(struct task_struct) );
     return -ENOMEM;
@@ -218,7 +236,7 @@ static void lkm_exit(void)
   printk(KERN_DEBUG "linux_inspect->removed\n");
   kobject_put(pid_kobj);
 
-  kfree(lkm_struct_memory);
+  kfree(lkm_task_struct_contents);
 }
 
 // Sets up callback functions
