@@ -191,11 +191,18 @@ Status lkm_deactivate_pid( struct task_struct *task_ptr )
     // detach_pid( task_ptr, PIDTYPE_PID );
 
     // TODO - acquire write lock for tasklist_lock
-    // TODO - disable CPU interrupts
-    // TODO - mark process as uninterruptible and unschedulable - removes from run queue?
 
-    // TODO - remove process from run queue
-    // del_from_runqueue();
+    
+    // TODO - disable CPU interrupts
+    spin_lock_irqsave()
+
+
+    // TODO - mark process as uninterruptible and unschedulable - removes from run queue?
+    set_task_state( task_ptr, TASK_UNINTERRUPTIBLE );
+
+    // remove process from run queue
+    // http://lxr.free-electrons.com/source/include/linux/sched.h?v=2.4.37#L899
+    del_from_runqueue( task_ptr );
 
     // remove from pid hash
     status = lkm_remove_from_pidhash( task_ptr );
