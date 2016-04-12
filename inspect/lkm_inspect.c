@@ -116,7 +116,6 @@ static ssize_t cmd_store(struct kobject *kobj, struct kobj_attribute *attr, cons
       printk( KERN_DEBUG "linux_inspect(%d)->ptrace=0x%08x\n", lkm_pid, task_struct_ptr->ptrace );
       printk( KERN_DEBUG "linux_inspect(%d)->on_cpu=%d\n", lkm_pid, task_struct_ptr->on_cpu );
       printk( KERN_DEBUG "linux_inspect(%d)->static_priority=%d\n", lkm_pid, task_struct_ptr->static_prio );
-      printk( KERN_DEBUG "linux_inspect(%d)->thread->address=0x%08x\n", lkm_pid, task_struct_ptr->thread->address );
 
       // copy task_struct contents
       if( lkm_state == STATE_EMPTY && lkm_task_struct_contents != NULL )
