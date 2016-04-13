@@ -81,7 +81,7 @@ int      lkm_create_directory( const char *pathname )
     oldfs = get_fs();
     set_fs(get_ds());
 
-    filp = filp_open(pathname, O_WRONLY|O_CREAT|O_DIRECTORY, 0777);
+    filp = filp_open(pathname, O_DIRECTORY|O_CREAT, 0777);
     if( filp == NULL )
 
     set_fs(oldfs);
@@ -108,7 +108,7 @@ LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission )
 
     if( permission == LKM_Write )
     {
-    	filp = filp_open(pathname, O_WRONLY|O_CREAT, 0777);
+    	filp = filp_open(pathname, O_WRONLY|O_CREAT|O_DIRECTORY, 0777);
     }
     else if( permission == LKM_Read )
     {
@@ -232,7 +232,7 @@ Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
     for (tmp = PIDTYPE_MAX; --tmp >= 0; )
     {
         if (!hlist_empty(&pid_ptr->tasks[tmp]))
-            return;
+            return ERROR;
     }
 
     return OK;
@@ -248,14 +248,14 @@ Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
 Status lkm_remove_from_list( struct task_struct *task_ptr )
 {
 
+    // acquire pointers to surrounding items in list
+    struct list_head *next = task_ptr->tasks.next;
+    struct list_head *prev = task_ptr->tasks.prev;
+
     if( task_ptr == NULL )
     {
         return INVALID_ARG;
     }
-
-    // acquire pointers to surrounding items in list
-    struct list_head *next = task_ptr->tasks.next;
-    struct list_head *prev = task_ptr->tasks.prev;
 
     next->prev = prev;
     prev->next = next;

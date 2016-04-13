@@ -56,7 +56,9 @@ typedef enum
 
 // ----- Inspection Module Defines
 
-#define MAX_OPERATION_SIZE 8
+#define MAX_FILENAME_SIZE 40
+#define MAX_DIR_SIZE 40
+#define MAX_PATH_SIZE 100
 
 typedef enum
 {
@@ -68,8 +70,11 @@ typedef enum
 
 typedef struct
 {
+
 	LKM_InspectCmd cmd;
 	int proc_id;
+  char dir_name[MAX_DIR_SIZE];
+  
 } LKM_Operation_t;
 
 #endif

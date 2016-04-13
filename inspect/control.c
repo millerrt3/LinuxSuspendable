@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "../types.h"
 
@@ -16,6 +17,7 @@ int main( int argc, char **args )
 	int pid = 0;
 	int writeAmt = 0;
 	int cmd = 0;
+	struct timespec tspec;
 
 	LKM_Operation_t operation;
 
@@ -30,12 +32,36 @@ int main( int argc, char **args )
 	// Retrieves pid
 	pid = getpid();
 
+	// retrieve current time
+	clock_gettime( CLOCK_REALTIME, &tspec );
+
 	// populate operation struct
 	operation.cmd = cmd;
 	operation.proc_id = pid;
+	memset( operation.dir_name, 0, MAX_DIR_SIZE );
+	snprintf( operation.dir_name, MAX_DIR_SIZE, "%d-%d-inspection", pid, (int)tspec.tv_sec );
 
 	// convert PID to ascii representation
-	printf( "Process PID: %d, Command: 0x%08x\n", pid, cmd );
+	printf( "Process PID: %d, Command: 0x%08x, dir=%s\n", operation.proc_id, operation.cmd, operation.dir_name );
+
+	// create output directory
+	if( mkdir( operation.dir_name, 0777 ) < 0 )
+	{
+		if( errno == EACCES )
+		{
+			printf( "Invalid Permissions to create %s\n", operation.dir_name );
+			return 1;
+		}
+		else if( errno == EEXIST )
+		{
+			printf( "%s already exists\n", operation.dir_name );
+		}
+		else
+		{
+			return 2;
+		}
+
+	}
 
 	// Open the pid file from sysfs in order to tell the
 	// inspection module the pid of this process

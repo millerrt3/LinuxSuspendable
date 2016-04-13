@@ -10,7 +10,7 @@ all:
 	make -C uapi
 
 	# Userspace control process for inspection module
-	gcc -o inspect/control inspect/control.c
+	gcc -Wall -o inspect/control inspect/control.c
 	
 clean:
 	rm -f *.o
