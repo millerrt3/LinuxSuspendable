@@ -13,11 +13,11 @@ int main( int argc, char **args )
 {
 
 	int pid_fd = 0;
-	int cmd_fd = 0;
 	int pid = 0;
 	int writeAmt = 0;
 	int cmd = 0;
-	char buffer[10];
+
+	LKM_Operation_t operation;
 
 	if( argc <= 1 )
 	{
@@ -30,14 +30,16 @@ int main( int argc, char **args )
 	// Retrieves pid
 	pid = getpid();
 
+	// populate operation struct
+	operation.cmd = cmd;
+	operation.proc_id = pid;
+
 	// convert PID to ascii representation
-	memset( buffer, 0, 10 );
-	sprintf( buffer, "%d", pid );
 	printf( "Process PID: %d, Command: 0x%08x\n", pid, cmd );
 
 	// Open the pid file from sysfs in order to tell the
 	// inspection module the pid of this process
-	pid_fd = open( "/sys/kernel/linux_inspect/lkm_pid", O_RDWR );
+	pid_fd = open( "/sys/kernel/linux_inspect/operation", O_RDWR );
 	if( pid_fd < 0 )
 	{
 		printf( "ERROR: Unable to open lkm_pid file; 0x%08x\n", errno );
@@ -45,53 +47,18 @@ int main( int argc, char **args )
 	}
 
 	// tell the inspection module the pid of this process
-	writeAmt = write( pid_fd, (void*)buffer, strlen(buffer) );
-	if( writeAmt < strlen(buffer) )
+	writeAmt = write( pid_fd, &operation, sizeof(LKM_Operation_t) );
+	if( writeAmt < sizeof(LKM_Operation_t) )
 	{
 		printf( "ERROR: unable to write into lkm_pid; 0x%08x\n", errno );
-		close(pid_fd);
-		return 0;
 	}
 
 	// close file descriptor the pid
 	close( pid_fd );
 
-	// Process command locally
-	switch( cmd )
-	{
-
-		case INS_INFO:
-			break;
-
-		default:
-	   		break;
-
-	}
-
-	cmd_fd = open( "/sys/kernel/linux_inspect/lkm_cmd", O_RDWR );
-	if( cmd_fd < 0 )
-	{
-		printf( "ERROR: Unable to open lkm_cmd file; 0x%08x\n", errno );
-		return 0;
-	}
-
-	// tell the inspection module the pid of this process
-	memset( buffer, 0, 10 );
-	sprintf( buffer, "%d", cmd );
-	writeAmt = write( cmd_fd, (void*)buffer, 4 );
-	if( writeAmt < 4 )
-	{
-		printf( "ERROR: unable to write into lkm_cmd; 0x%08x\n", errno );
-		close(pid_fd);
-		return 0;
-	}
-
-	// close file descriptor the pid
-	close( cmd_fd );
 	int index = 0;
 	for( index = 0; index < 5; index++ )
 	{
-		printf( "Loop: %d\n", index );
 		sleep(1);
 	}
 

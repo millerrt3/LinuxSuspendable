@@ -1,16 +1,9 @@
-#include <linux/fs.h>
+#include <linux/fs.h> // vfs_write
 #include <asm/segment.h>
 #include <asm/uaccess.h>
 #include <linux/buffer_head.h>
 #include <linux/pid.h>
-
-#if 0
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/syscalls.h>
-#include <linux/fcntl.h>
-#endif
+#include <linux/sched.h>  // tasklist_lock
 
 #include "../types.h"
 #include "lkm_utils.h"
@@ -23,9 +16,6 @@ struct task_struct* lkm_get_task_struct( int pid )
 
     printk( KERN_DEBUG "lkm_get_task_struct->pid=%d\n", pid );
 
-    // acquire read lock for the task_struct area
-    rcu_read_lock();
-
     // Convert from virtual to real PID
     real_pid_ptr = find_vpid(pid);
     if (real_pid_ptr == NULL)
@@ -33,9 +23,6 @@ struct task_struct* lkm_get_task_struct( int pid )
         printk(KERN_WARNING "lkm_get_task_struct->VPID translation failed; pid=%d\n", pid );
         return NULL;
     }
-
-    // release lock over the task_struct listing
-    rcu_read_unlock();
 
     // Get the task struct associated with the provided PID
     // pid_task - RCU used internally for synchronization with kernel
@@ -49,22 +36,6 @@ struct task_struct* lkm_get_task_struct( int pid )
     // return
     return pid_task_ptr;
     
-}
-
-
-void lkm_print_buffer( void *buffer, int size )
-{
-    int index = 0;
-    char *pBuf = (char*)buffer;
-
-    for( index = 0; index < size; index++ )
-    {
-        printk( KERN_DEBUG "%02x ", pBuf[index] );
-        if( index != 0 && (index % 20)==0 )
-        {
-            printk( KERN_DEBUG "\n" );
-        }
-    }
 }
 
 
@@ -101,6 +72,29 @@ int lkm_save_to_file( const char *pathname, void *buffer, int size )
 
 }
 
+int      lkm_create_directory( const char *pathname )
+{
+    struct file* filp = NULL;
+    mm_segment_t oldfs;
+    int err = 0;
+
+    oldfs = get_fs();
+    set_fs(get_ds());
+
+    filp = filp_open(pathname, O_WRONLY|O_CREAT|O_DIRECTORY, 0777);
+    if( filp == NULL )
+
+    set_fs(oldfs);
+    if(IS_ERR(filp)) {
+        err = PTR_ERR(filp);
+        return -1;
+    }
+
+    // close file
+    filp_close(filp, NULL);
+    
+    return 0;
+}
 
 LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission )
 {
@@ -170,7 +164,7 @@ void     lkm_file_close( LKM_FILE file )
 	filp_close(file, NULL);
 }
 
-
+#if 0
 Status lkm_activate_pid( struct task_struct *task_ptr )
 {
 
@@ -190,19 +184,22 @@ Status lkm_deactivate_pid( struct task_struct *task_ptr )
     // detach_pid is not exported within kernel
     // detach_pid( task_ptr, PIDTYPE_PID );
 
-    // TODO - acquire write lock for tasklist_lock
-
+#if 0
+    // TODO - acquire write lock for tasklist_lock - http://lxr.free-electrons.com/source/kernel/exit.c#L180
+    write_lock_irq(&tasklist_lock);
     
     // TODO - disable CPU interrupts
-    spin_lock_irqsave()
-
+    // spin_lock_irqsave()
 
     // TODO - mark process as uninterruptible and unschedulable - removes from run queue?
     set_task_state( task_ptr, TASK_UNINTERRUPTIBLE );
 
     // remove process from run queue
     // http://lxr.free-electrons.com/source/include/linux/sched.h?v=2.4.37#L899
-    del_from_runqueue( task_ptr );
+    // del_from_runqueue( task_ptr );
+#endif
+
+    
 
     // remove from pid hash
     status = lkm_remove_from_pidhash( task_ptr );
@@ -210,11 +207,16 @@ Status lkm_deactivate_pid( struct task_struct *task_ptr )
     // remove from task list
     status = lkm_remove_from_list( task_ptr );
 
+#if 0
     // TODO - release write lock
+    write_unlock_irq(&tasklist_lock);
+#endif
 
     return ERROR;
 
 }
+#endif
+
 
 Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
 {
@@ -225,7 +227,7 @@ Status lkm_remove_from_pidhash( struct task_struct *task_ptr )
     int tmp = 0;
 
     hlist_del_rcu( &(link_ptr->node) );
-    link->pid = NULL;
+    link_ptr->pid = NULL;
 
     for (tmp = PIDTYPE_MAX; --tmp >= 0; )
     {

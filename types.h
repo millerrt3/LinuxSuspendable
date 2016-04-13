@@ -54,21 +54,22 @@ typedef enum
 
 } LKM_Command;
 
-typedef struct
-{
+// ----- Inspection Module Defines
 
-  LKM_Command cmd;
-  int proc_id;
-  int data;
-
-} LKM_Operation;
+#define MAX_OPERATION_SIZE 8
 
 typedef enum
 {
 
-  INS_INFO    = 0,
-  INS_SUSPEND = 1,
-  
+	LKM_TASK_STRUCT                      = 0x00000001,
+	LKM_TASK_MEMORY                      = 0x00000002,
+	
 } LKM_InspectCmd;
+
+typedef struct
+{
+	LKM_InspectCmd cmd;
+	int proc_id;
+} LKM_Operation_t;
 
 #endif
