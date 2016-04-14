@@ -5,61 +5,62 @@ Robert Miller & Cameron Whipple
 
 Proposal:
 
-Opt-in suspension system for running processes (allowing their state to be saved and resumed at a
-later time).
+We will create a set of tools for examining running processes, allowing users to take snaphots of
+the operating system's view of process state without interrupting the process itself. This will be
+done by allowing users to run a simple control process in userspace, which will in turn pass
+commands via the virtual file system to a kernel module. Inside this module, we will interpret the
+provided command to identify a target process by it's pid, recovering a copy of its task struct and
+all memory (in registers, on the stack, or on the heap) owned by that process. Once we've acquired
+consistent copies of all of this information (using any and all relevant locking structures within
+the kernel to ensure the safety and validity of the data accessed), we will dump whatever
+information was requested into one or more files.
 
 
 Purpose:
 
-This system would allow a process to be saved to be executed later. This could enable a process to
-be moved from one machine to another, or it could allow a process to be 'stopped' (to free up CPU
-resources, for instance) without losing any progress (e.g. resuming the process would bring it back
-up exactly where it had left off).
+This utility could serve many purposes across the realms of debugging, reverse engineering, and
+security research. By presenting a cohesive view of the running process--including not only access
+to the internal state of its memory pages but also to the operating system's view of that process--
+developers would be granted near total access to the way that a process was executing at a given
+moment in time. Additionally, because the same process could be snapshotted multiple times in
+succession, developers could track the way that certain logic results in changes in (for instance)
+the task struct, perhaps to verify that system calls or other logic which touches the kernel to
+change the way that the process is handled are indeed executing as planned.
 
 
 Kernel Modifications:
 
-We intend to implement this functionality with two signals (possibly SIGUSR1 and SIGUSR2, but we
-may decide to create custom signals), one of which alerts a process that it is about to be
-suspended--giving it time to clean up any state that it needs to--and another which alerts it that
-it is being resumed.
-These signals would be handled within a userspace API which we will write: the signal handlers will
-call out to functions within the process (passed to the API as function pointers) to allow the
-processes developers to handle suspend/resume; if no signal handlers are in place, the suspension
-will be canceled (to preserve backwards compatibility).
-Once the suspension signal has been handled, we will assume that any outstanding state has been
-cleaned up and that all that remains to be done is to save the memory state of the process. The
-process will be prevented from being rescheduled as we copy its register, stack, and dynamic memory
-state into one or more files.
-To resume a process, we would load these files back into memory, rebuild the task struct, and send
-a 'resume' signal to the process before rescheduling it. The process would be responsible for
-reacquiring any resources it needs in the 'resume' signal handler, and would then be able to
-continue as if nothing had happened.
+The kernel itself will require no modification; we will be building out two components to work in
+conjunction with any version of the Linux kernel: a kernel module (containing the code for accessing
+and storing the contents of the task structs and any related fields) and a userspace command and
+control application which will send (and possibly receive) coded signals to/from the module that we
+write.
 
 
 Test Cases:
-
-We would need to test at least three cases:
-  Signaling processes which do not support suspension (to ensure that the suspension is cancelled)
-  Signaling a process which DOES support suspension
-  Signaling a process which supports suspension, but has marked that it cannot be suspended at that
-    time
+  
+  Snapshot a process to observe its task struct and memory
+  Snapshot the same process multiple times
+    Ensure that changes can be observed
+  Attempt to snapshot a process which doesn't exist/is unavailable
 
 
 Schedule:
 
   Week 1:
-    Setting up signals
-      Build placeholder uspace API
-      Build placeholder kernel module
-      Send signals to uspace and handle them accordingle
+    Dump task struct info
+      Acquire relevant locks
+      Get to the raw information
+      Dump raw bytes to a file
 
   Week 2:
-    Suspend
-      Save process state
-      Remove process from task list
+    Interpret task struct
+      Format the output for human-readability
+      Provide some analysis of struct contents
+      Follow pointers (when relevant) to get more data
 
   Week 3:
-    Resume
-      Restore state
-      Add process to task list
+    Control/Testing
+      Build out and test the command and control process
+      Tie all of the components together
+      Ensure that the sequence works from start to finish

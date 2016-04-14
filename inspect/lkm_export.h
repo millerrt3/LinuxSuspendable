@@ -16,6 +16,7 @@
 
 
 int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 
 #endif
