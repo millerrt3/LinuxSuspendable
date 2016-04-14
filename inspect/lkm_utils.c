@@ -43,6 +43,7 @@ int lkm_save_to_file_ascii( const char *pathname, void *buffer, int size )
 
     LKM_FILE file = 0;
     int writeAmt = 0;
+    unsigned long long offset = 0;
 
     printk( KERN_DEBUG "lkm_save_to_file_ascii->path=%s, addr=0x%08x, size=%d\n", pathname, (int)buffer, size );
 
@@ -57,7 +58,7 @@ int lkm_save_to_file_ascii( const char *pathname, void *buffer, int size )
     // write content into the file
     if( file != NULL )
     {
-        writeAmt = lkm_file_ascii_write( file, buffer, size );
+        writeAmt = lkm_file_ascii_write( file, buffer, size, &offset );
         if( writeAmt < size )
         {
             printk( KERN_WARNING "lkm_save_to_file_ascii->failed to write; actual=%d, expected=%d\n", writeAmt, size );
@@ -76,6 +77,7 @@ int lkm_save_to_file( const char *pathname, void *buffer, int size )
 
     LKM_FILE file = 0;
     int writeAmt = 0;
+    unsigned long long offset = 0;
 
     printk( KERN_DEBUG "lkm_save_to_file->path=%s, addr=0x%08x, size=%d\n", pathname, (int)buffer, size );
 
@@ -90,7 +92,7 @@ int lkm_save_to_file( const char *pathname, void *buffer, int size )
     // write content into the file
     if( file != NULL )
     {
-        writeAmt = lkm_file_write( file, buffer, size );
+        writeAmt = lkm_file_write( file, buffer, size, &offset );
         if( writeAmt < size )
         {
             printk( KERN_WARNING "lkm_save_to_file->failed to write; actual=%d, expected=%d\n", writeAmt, size );
@@ -156,16 +158,15 @@ LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission )
 }
 
 
-int      lkm_file_write( LKM_FILE file, char *buffer, int size )
+int      lkm_file_write( LKM_FILE file, char *buffer, int size, unsigned long long *p_offset )
 {
 	mm_segment_t oldfs;
     int ret = 0;
-    unsigned long long offset = 0;
 
     oldfs = get_fs();
     set_fs(get_ds());
 
-    ret = vfs_write(file, buffer, size, &offset);
+    ret = vfs_write(file, buffer, size, p_offset);
 
     set_fs(oldfs);
     return ret;
@@ -208,11 +209,10 @@ void lkm_binary_to_ascii( char *dest, char *ptr, int size )
 
 }
 
-int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size )
+int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size, unsigned long long *p_offset )
 {
     mm_segment_t oldfs;
     int ret = 0;
-    unsigned long long offset = 0;
     char work_buf[100];
     int bytes_remain = size;
     int bytes_written = 0;
@@ -241,7 +241,7 @@ int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size )
         lkm_binary_to_ascii( work_buf, buffer + bytes_written, bytes_to_convert );
 
         // add content to file
-        ret = vfs_write(file, work_buf, bytes_to_convert * 2, &offset);
+        ret = vfs_write(file, work_buf, bytes_to_convert * 2, p_offset);
         if( ret < bytes_to_convert * 2)
         {
             printk( KERN_WARNING "lkm_file_ascii_write->ERROR Failed to write ascii content\n" );

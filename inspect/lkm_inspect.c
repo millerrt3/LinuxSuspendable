@@ -1,5 +1,6 @@
 #include "../types.h"
 #include "lkm_utils.h"
+#include "lkm_export.h"
 
 #include <linux/kobject.h>
 #include <linux/string.h>
@@ -81,16 +82,24 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
   if( (rv == 0) && (lkm_opstruct.cmd & LKM_TASK_STRUCT) )
   {
 
+    LKM_FILE file;
+    unsigned long long offset = 0;
+
     // creates the full path
     __generate_path( full_path, lkm_opstruct.dir_name, "task_struct.txt" );
 
-    // export task struct contents to file
-    file_size = lkm_save_to_file_ascii( full_path, task_ptr, sizeof(struct task_struct) );
-    if( file_size < 0 )
+    file = lkm_file_open( full_path, LKM_Write );
+    if( file == NULL )
     {
-      printk( KERN_WARNING "linux_inspect->failed to export task_struct contents to %s\n", full_path );
-      rv = 1;
+      printk( KERN_WARNING "linux_inspect->Failed to open %s\n", full_path );
+      return count;
     }
+
+    if( lkm_export_task_struct( task_ptr, file, &offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export task_struct\n" );
+
+    // close file
+    lkm_file_close( file );
 
   }
 #if 0
