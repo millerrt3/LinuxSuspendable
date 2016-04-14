@@ -30,13 +30,11 @@ static void __generate_path( char *dest, char *dir, char *filename )
   {
     snprintf( dest, MAX_PATH_SIZE, "%s/%s", dir, filename );
   }
-
-  printk( KERN_DEBUG "__generate_path; dir=%s, filename=%s, dest=%s\n", dir, filename, dest );
-
 }
 
 static ssize_t operation_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
+  // TODO -- Print out usage message that this doesn't actually exist
   return 0;
 }
 
@@ -112,6 +110,7 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
   // release lock over the task_struct listing
   rcu_read_unlock();
 
+  // TODO -- Check if this is necessary
   if( rv != 0 )
     return count;
 

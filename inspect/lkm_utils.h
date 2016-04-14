@@ -43,7 +43,4 @@ void     lkm_file_close( LKM_FILE file );
 char lkm_itoa( char nibble );
 void lkm_binary_to_ascii( char *dest, char *ptr, int size );
 
-Status lkm_remove_from_pidhash( struct task_struct *task_ptr );
-Status lkm_remove_from_list( struct task_struct *task_ptr );
-
 #endif

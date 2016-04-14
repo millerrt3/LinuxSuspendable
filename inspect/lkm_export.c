@@ -36,9 +36,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	/*
 	 * SMP waking
 	 */
-	 // Note -- Can we use the CONFIG_SMP flag here? Using flags would make our module plug & play more easily
-#ifdef CONFIG_SMP
-	// Note -- This is a field internal to the kernel's list structure; is this relevant to the end user?
 	writeAmt = lkm_file_write( file,"\nwake_entry: ", strlen("\nwake_entry: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->wake_entry), sizeof(struct llist_node), p_offset );
 
@@ -56,7 +53,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	writeAmt = lkm_file_write( file,"\nwake_cpu: ", strlen("\nwake_cpu: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->wake_cpu), sizeof(int), p_offset );
-#endif
 
 	writeAmt = lkm_file_write( file,"\non_rq: ", strlen("\non_rq: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->on_rq), sizeof(int), p_offset );
@@ -74,7 +70,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nrt_priority: ", strlen("\nrt_priority: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rt_priority), sizeof(unsigned int), p_offset );
 
-	// Note -- this linked struct consistes almost entirely of function pointers; how do we want to represent that?
 	writeAmt = lkm_file_write( file,"\nsched_class: ", strlen("\nsched_class: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_class), sizeof(struct sched_class*), p_offset );
 
@@ -84,18 +79,14 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nrt: ", strlen("\nrt: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rt), sizeof(struct sched_rt_entity), p_offset );
 
-#ifdef CONFIG_CGROUP_SCHED
 	writeAmt = lkm_file_write( file,"\nsched_task_group: ", strlen("\nsched_task_group: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_task_group), sizeof(struct task_group*), p_offset );
-#endif
 
 	writeAmt = lkm_file_write( file,"\ndl: ", strlen("\ndl: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->dl), sizeof(struct sched_dl_entity), p_offset );
 
-#ifdef CONFIG_BLK_DEV_IO_TRACE
 	writeAmt = lkm_file_write( file,"\nbtrace_seq: ", strlen("\nbtrace_seq: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->btrace_seq), sizeof(unsigned int), p_offset );
-#endif
 
 
 	/*
@@ -114,7 +105,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	/*
 	 * Preemption
 	 */
-#ifdef CONFIG_PREEMPT_RCU
+#if 0
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_nesting: ", strlen("\nrcu_read_lock_nesting: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_nesting), sizeof(int), p_offset );
 
@@ -125,12 +116,9 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.need_qs), sizeof(bool), p_offset );
 
 	// TODO -- task_ptr->rcu_blocked_node has a significant amount of stuff in it
-#endif
-#ifdef CONFIG_TASKS_RCU
 	writeAmt = lkm_file_write( file,"\nrcu_tasks_nvcsw: ", strlen("\nrcu_tasks_nvcsw: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_tasks_nvcsw), sizeof(unsigned long), p_offset );
 #endif
-
 
 	if( lkm_export_cpusets( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export cpusets\n" );
@@ -161,7 +149,6 @@ int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long
 
 int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
-#ifdef CONFIG_CPUSETS
 	int writeAmt = 0;
 	unsigned long flags = 0;
 
@@ -182,7 +169,6 @@ int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 
 	// release alloc_lock
 	spin_unlock_irqrestore( &(task_ptr->alloc_lock), flags );
-#endif
 
 	return 0;
 }

@@ -10,10 +10,12 @@
 #define _TYPES_H
 
 
+// TODO -- Remove
 #define ARM_SIGUSR1 (0x0000000a)
 #define ARM_SIGUSR2 (0x0000000c)
 
 
+// TODO -- Remove
 typedef enum
 {
   SUSPEND_SIGNAL = ARM_SIGUSR1,
@@ -25,6 +27,7 @@ typedef enum
  *
  * @details
  * 		Represents the possible return code values from the functions within the module.
+ * TODO -- Remove
  */
 typedef enum
 {
@@ -37,6 +40,8 @@ typedef enum
 } Status;
 
 // Values to enable/disable suspension
+
+// TODO -- Remove
 typedef enum 
 {
   ENABLED,
@@ -44,6 +49,8 @@ typedef enum
   DISABLED,
 } SuspensionMode;
 
+
+// TODO -- Remove
 typedef enum
 {
   SUSPEND_PROCESS,
