@@ -5,14 +5,14 @@ INSPECT_BASE = $(PWD)/inspect
 UAPI_BASE = $(PWD)/uapi
 
 all:
-	make -C $(LINUX_BASE) SUBDIRS=$(MODULE_BASE) modules
 	make -C $(LINUX_BASE) SUBDIRS=$(INSPECT_BASE) modules
 	make -C uapi
 
 	# Userspace control process for inspection module
-	gcc -Wall -o inspect/control inspect/control.c
+	gcc -Wall -o control inspect/control.c
 	
 clean:
 	rm -f *.o
 	rm -f $(MODULE_BASE)/*.o
 	rm -f $(INSPECT_BASE)/*.o
+	rm -f control

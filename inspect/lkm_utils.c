@@ -38,6 +38,38 @@ struct task_struct* lkm_get_task_struct( int pid )
     
 }
 
+int lkm_save_to_file_ascii( const char *pathname, void *buffer, int size )
+{
+
+    LKM_FILE file = 0;
+    int writeAmt = 0;
+
+    printk( KERN_DEBUG "lkm_save_to_file_ascii->path=%s, addr=0x%08x, size=%d\n", pathname, (int)buffer, size );
+
+    // open file for write
+    file = lkm_file_open( pathname, LKM_Write );
+    if( file == NULL )
+    {
+        printk( KERN_WARNING "lkm_save_to_file_ascii->failed to open %s\n", pathname );
+        file = NULL;
+    }
+
+    // write content into the file
+    if( file != NULL )
+    {
+        writeAmt = lkm_file_ascii_write( file, buffer, size );
+        if( writeAmt < size )
+        {
+            printk( KERN_WARNING "lkm_save_to_file_ascii->failed to write; actual=%d, expected=%d\n", writeAmt, size );
+        }
+    }
+
+    if( file != NULL )
+        lkm_file_close( file );
+
+    return writeAmt;
+
+}
 
 int lkm_save_to_file( const char *pathname, void *buffer, int size )
 {
@@ -137,6 +169,91 @@ int      lkm_file_write( LKM_FILE file, char *buffer, int size )
 
     set_fs(oldfs);
     return ret;
+
+}
+
+char lkm_itoa( char nibble )
+{
+
+    if( nibble >= 0 && nibble <= 9 )
+    {
+        return '0' + nibble;
+    }
+    else if( nibble >= 10 && nibble <= 15 )
+    {
+        return 'a' + (nibble-10);
+    }
+    else
+    {
+        return -1;
+    }
+
+}
+
+// ensure destination buffer is twice the size of size
+void lkm_binary_to_ascii( char *dest, char *ptr, int size )
+{
+    int index = 0;
+    int dest_index = 0;
+
+    for( index = 0; index < size; index++ )
+    {
+
+        // grab first nibble
+        dest[dest_index++] = lkm_itoa((ptr[index] & 0xf0) >> 4);
+
+        // grab second nibble
+        dest[dest_index++] = lkm_itoa(ptr[index] & 0x0f);
+    }
+
+}
+
+int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size )
+{
+    mm_segment_t oldfs;
+    int ret = 0;
+    unsigned long long offset = 0;
+    char work_buf[100];
+    int bytes_remain = size;
+    int bytes_written = 0;
+    int bytes_to_convert = 0;
+
+    oldfs = get_fs();
+    set_fs(get_ds());
+
+    while( bytes_remain > 0 )
+    {
+
+        memset( work_buf, 0, 100 );
+
+        if( bytes_remain >= 50 )
+        {
+            bytes_to_convert = 50;
+            
+        }
+        else
+        {
+            bytes_to_convert = bytes_remain;
+        }
+
+
+        // convert the next round into work_buf
+        lkm_binary_to_ascii( work_buf, buffer + bytes_written, bytes_to_convert );
+
+        // add content to file
+        ret = vfs_write(file, work_buf, bytes_to_convert * 2, &offset);
+        if( ret < bytes_to_convert * 2)
+        {
+            printk( KERN_WARNING "lkm_file_ascii_write->ERROR Failed to write ascii content\n" );
+            return -1;
+        }
+
+        bytes_written += bytes_to_convert;
+        bytes_remain -= bytes_to_convert;
+    }
+
+    set_fs(oldfs);
+    return size;
 
 }
 

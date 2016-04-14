@@ -82,10 +82,10 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
   {
 
     // creates the full path
-    __generate_path( full_path, lkm_opstruct.dir_name, "task_struct.bin" );
+    __generate_path( full_path, lkm_opstruct.dir_name, "task_struct.txt" );
 
     // export task struct contents to file
-    file_size = lkm_save_to_file( full_path, task_ptr, sizeof(struct task_struct) );
+    file_size = lkm_save_to_file_ascii( full_path, task_ptr, sizeof(struct task_struct) );
     if( file_size < 0 )
     {
       printk( KERN_WARNING "linux_inspect->failed to export task_struct contents to %s\n", full_path );

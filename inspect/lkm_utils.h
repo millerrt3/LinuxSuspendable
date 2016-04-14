@@ -33,12 +33,16 @@ struct task_struct* lkm_get_task_struct( int pid );
 
 int      lkm_create_directory( const char *pathname );
 int      lkm_save_to_file( const char *pathname, void *buffer, int size );
+int      lkm_save_to_file_ascii( const char *pathname, void *buffer, int size );
 LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission );
 int      lkm_file_write( LKM_FILE file, char *buffer, int size );
+int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size );
 int      lkm_file_read( LKM_FILE file, char *buffer, int size );
 void     lkm_file_close( LKM_FILE file );
 
-// TBD - Should these be internal?
+char lkm_itoa( char nibble );
+void lkm_binary_to_ascii( char *dest, char *ptr, int size );
+
 Status lkm_remove_from_pidhash( struct task_struct *task_ptr );
 Status lkm_remove_from_list( struct task_struct *task_ptr );
 
