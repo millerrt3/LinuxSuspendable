@@ -45,8 +45,6 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
 
   int rv = 0;
   struct task_struct *task_ptr = 0;
-  int file_size = 0;
-  // char dir_name[MAX_DIR_SIZE];
   char file_name[MAX_FILENAME_SIZE];
   char full_path[MAX_PATH_SIZE];
 

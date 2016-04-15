@@ -10,6 +10,10 @@
 #include <linux/init.h>
 #include <linux/pid.h>
 #include <linux/slab.h>
+#include <linux/cgroup.h>
+#include <linux/atomic.h>
+
+extern spinlock_t css_set_lock;
 
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
@@ -120,8 +124,110 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_tasks_nvcsw), sizeof(unsigned long), p_offset );
 #endif
 
+	/*
+	 * cpusets
+	 */
 	if( lkm_export_cpusets( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export cpusets\n" );
+
+  	/*
+	 * cgroups
+	 */
+	if( lkm_export_cgroups( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export cgroups\n" );
+
+  	/*
+	 * futex
+	 */
+	writeAmt = lkm_file_write( file,"\nrobust_list: ", strlen("\nrobust_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->robust_list), sizeof(struct robust_list_head __user *), p_offset );
+
+#if 0
+	/*
+	 * compat
+	 */
+	writeAmt = lkm_file_write( file,"\ncompat_robust_list: ", strlen("\ncompat_robust_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->compat_robust_list), sizeof(compat_robust_list_head), p_offset );
+#endif
+
+	/*
+	 * pi
+	 */
+	writeAmt = lkm_file_write( file,"\npi_state_list: ", strlen("\npi_state_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pi_state_list), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\npi_state_cache: ", strlen("\npi_state_cache: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pi_state_cache), sizeof(struct futex_pi_state*), p_offset );
+
+	/*
+	 * perf events
+	 */
+	if( lkm_export_perf_events( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export performance events\n" );
+
+    /*
+     * debug preempt
+     */
+    writeAmt = lkm_file_write( file,"\npreempt_disable_ip: ", strlen("\npreempt_disable_ip: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->preempt_disable_ip), sizeof(unsigned long), p_offset );
+
+#if 0
+	/*
+     * numa
+     */
+    writeAmt = lkm_file_write( file,"\nmempolicy: ", strlen("\nmempolicy: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mempolicy), sizeof(struct mempolicy), p_offset );
+
+#endif
+
+	// TODO - may be interesting to dig deeper
+	writeAmt = lkm_file_write( file,"\nrcu: ", strlen("\nrcu: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu), sizeof(struct rcu_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsplice_pipe: ", strlen("\nsplice_pipe: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->splice_pipe), sizeof(struct pipe_inode_info*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ntask_frag: ", strlen("\ntask_frag: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->task_frag), sizeof(struct page_frag), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ndelays: ", strlen("\ndelays: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->delays), sizeof(struct task_delay_info*), p_offset );
+
+#if 0
+	writeAmt = lkm_file_write( file,"\nmake_it_fail: ", strlen("\nmake_it_fail: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->make_it_fail), sizeof(int), p_offset );
+#endif
+
+	/*
+	 * dirty records
+	 */
+	writeAmt = lkm_file_write( file,"\nnr_dirtied: ", strlen("\nnr_dirtied: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nr_dirtied), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nnr_dirtied_pause: ", strlen("\nnr_dirtied_pause: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nr_dirtied_pause), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ndirty_paused_when: ", strlen("\ndirty_paused_when: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->dirty_paused_when), sizeof(unsigned long), p_offset );
+
+	/*
+	 * latencytop
+	 */
+
+	/*
+	 * timer slack
+	 */
+	writeAmt = lkm_file_write( file,"\ntimer_slack_ns: ", strlen("\ntimer_slack_ns: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->timer_slack_ns), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ndefault_timer_slack_ns: ", strlen("\ndefault_timer_slack_ns: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->default_timer_slack_ns), sizeof(unsigned long), p_offset );
+
+	/*
+	 * function graphing tracer
+	 */
+	if( lkm_export_function_graph_tracer( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export function grapher data\n" );
 
 	return 0;
 }
@@ -171,4 +277,90 @@ int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 	spin_unlock_irqrestore( &(task_ptr->alloc_lock), flags );
 
 	return 0;
+}
+
+int lkm_export_cgroups( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+	unsigned long flags;
+
+	// acquire lock
+	// TODO - css_set_lock was not able to be found as a kernel module
+	// spin_lock_irqsave(&css_set_lock, flags);
+
+	writeAmt = lkm_file_write( file,"\ncgroups: ", strlen("\ncgroups: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cgroups), sizeof(struct css_set __rcu *), p_offset );
+
+	spin_lock_irqsave( &(task_ptr->alloc_lock), flags );
+
+	writeAmt = lkm_file_write( file,"\ncg_list: ", strlen("\ncg_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cg_list), sizeof(struct list_head), p_offset );
+
+	spin_unlock_irqrestore( &(task_ptr->alloc_lock), flags );
+
+	// release lock
+	// TODO - css_set_lock was not able to be found as a kernel module
+	// spin_unlock_irqrestore( &css_set_lock, flags );
+
+	return 0;
+}
+
+int lkm_export_perf_events( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	int writeAmt = 0;
+	int index = 0;
+	char work_buf[100];
+
+	// TODO - does the perf_event_mutex need to be acquired?
+
+	for( index = 0; index < perf_nr_task_contexts; index++ )
+	{
+
+		memset( work_buf, 0, 100 );
+		sprintf( work_buf, "\nperf_event_ctxp-%d: ", index );
+
+		// print header
+		writeAmt = lkm_file_write( file, work_buf, strlen(work_buf), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->perf_event_ctxp[index]), sizeof(struct perf_event_context*), p_offset );
+
+	}
+
+	writeAmt = lkm_file_write( file, "\nperf_event_mutex: ", strlen("\nperf_event_mutex: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->perf_event_mutex), sizeof(struct mutex), p_offset );
+
+	writeAmt = lkm_file_write( file, "\nperf_event_list: ", strlen("\nperf_event_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->perf_event_list), sizeof(struct list_head), p_offset );
+
+	return 0;
+
+}
+
+int lkm_export_function_graph_tracer( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	// TODO - Going more in depth for this section may be desirable as it could potentially reveal stacktrace
+
+	int writeAmt = 0;
+	unsigned int value = 0;
+
+	writeAmt = lkm_file_write( file,"\ncurr_ret_stack: ", strlen("\ncurr_ret_stack: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->curr_ret_stack), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nret_stack: ", strlen("\nret_stack: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ret_stack), sizeof(struct ftrace_ret_stack*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nftrace_timestamp: ", strlen("\nftrace_timestamp: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ftrace_timestamp), sizeof(unsigned long long), p_offset );
+
+	value = atomic_read( &(task_ptr->trace_overrun) );
+	writeAmt = lkm_file_write( file,"\ntrace_overrun: ", strlen("\ntrace_overrun: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(value), sizeof(unsigned int), p_offset );
+
+	value = atomic_read( &(task_ptr->tracing_graph_pause) );
+	writeAmt = lkm_file_write( file,"\ntracing_graph_pause: ", strlen("\ntracing_graph_pause: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(value), sizeof(unsigned int), p_offset );
+
+	return 0;
+
 }
