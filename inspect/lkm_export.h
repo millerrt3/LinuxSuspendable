@@ -19,7 +19,9 @@ int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_cgroups( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_cgroup_memory( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_perf_events( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_function_graph_tracer( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_tracing( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 
 #endif

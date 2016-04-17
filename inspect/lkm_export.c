@@ -13,8 +13,6 @@
 #include <linux/cgroup.h>
 #include <linux/atomic.h>
 
-extern spinlock_t css_set_lock;
-
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -142,10 +140,11 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nrobust_list: ", strlen("\nrobust_list: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->robust_list), sizeof(struct robust_list_head __user *), p_offset );
 
-#if 0
+
 	/*
 	 * compat
 	 */
+#if 0
 	writeAmt = lkm_file_write( file,"\ncompat_robust_list: ", strlen("\ncompat_robust_list: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->compat_robust_list), sizeof(compat_robust_list_head), p_offset );
 #endif
@@ -212,6 +211,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	/*
 	 * latencytop
+	 * NOTE: Not built into the kernel
 	 */
 
 	/*
@@ -224,10 +224,46 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->default_timer_slack_ns), sizeof(unsigned long), p_offset );
 
 	/*
+  	 * Kernel Address Sanitizer (kasan)
+  	 * NOTE: Not built into the kernel
+  	 */
+#if 0
+	writeAmt = lkm_file_write( file,"\nkasan_depth: ", strlen("\nkasan_depth: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->kasan_depth), sizeof(unsigned int), p_offset );
+#endif
+
+	/*
 	 * function graphing tracer
 	 */
 	if( lkm_export_function_graph_tracer( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export function grapher data\n" );
+
+    /*
+	 * function graphing tracer
+	 */
+	if( lkm_export_tracing( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export the tracing data\n" );
+
+    /*
+     * memory allocation for cgroups
+     */
+  	if( lkm_export_cgroup_memory( task_ptr, file, p_offset ) < 0 )
+  		printk( KERN_WARNING "linux_inspect->Failed to export cgroup memory\n" );
+
+  	/*
+  	 * uprobes
+  	 * NOTE: Not built into the kernel
+  	 */
+
+  	/*
+  	 * bcache
+  	 * NOTE: Not built into the kernel
+  	 */
+
+  	/*
+  	 * debug atomic sleep
+  	 * NOTE: Not built into the kernel
+  	 */
 
 	return 0;
 }
@@ -360,6 +396,39 @@ int lkm_export_function_graph_tracer( struct task_struct *task_ptr, LKM_FILE fil
 	value = atomic_read( &(task_ptr->tracing_graph_pause) );
 	writeAmt = lkm_file_write( file,"\ntracing_graph_pause: ", strlen("\ntracing_graph_pause: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(value), sizeof(unsigned int), p_offset );
+
+	return 0;
+
+}
+
+int lkm_export_tracing( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\ntrace: ", strlen("\ntrace: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->trace), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ntrace_recursion: ", strlen("\ntrace_recursion: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->trace_recursion), sizeof(unsigned long), p_offset );
+
+	return 0;
+}
+
+int lkm_export_cgroup_memory( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\nmemcg_oom->memcg: ", strlen("\nmemcg_oom->memcg: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->memcg_oom.memcg), sizeof(struct mem_cgroup*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nmemcg_oom->gfp_mask: ", strlen("\nmemcg_oom->gfp_mask: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->memcg_oom.gfp_mask), sizeof(gfp_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nmemcg_oom->order: ", strlen("\nmemcg_oom->order: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->memcg_oom.order), sizeof(int), p_offset );
+
+	// TODO - one last remaining field
 
 	return 0;
 
