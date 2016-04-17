@@ -123,6 +123,44 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 #endif
 
 	/*
+	 * journaling filesystem info
+	 */
+	writeAmt = lkm_file_write( file,"\njournal_info: ", strlen("\njournal_info: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->journal_info), sizeof(void*), p_offset );
+
+	/*
+	 * stacked block device information
+	 */
+	// TODO - May be good to go further into as the bio structure is a major component in representing a driver in linux kernel (help with the story of projects importance)
+	writeAmt = lkm_file_write( file,"\nbio_list: ", strlen("\nbio_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->bio_list), sizeof(struct bio_list*), p_offset );
+
+	/*
+	 * stacked block device information
+	 */
+	writeAmt = lkm_file_write( file,"\nbio_list: ", strlen("\nbio_list: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->bio_list), sizeof(struct bio_list*), p_offset );
+
+	/*
+	 * Enable the block layer within the linux kernel - CONFG_BLOCK
+	 */
+	writeAmt = lkm_file_write( file,"\nplug: ", strlen("\nplug: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->plug), sizeof(struct blk_plug*), p_offset );
+
+	/*
+	 * vm state
+	 */
+	 // TODO - Definitely a look into for extension as most of the attributes are pointers to strucures
+	if( lkm_export_vm_state( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export vm state\n" );
+
+	/*
+	 * task extended accounting over taskstats
+	 */
+	if( lkm_export_task_xacct( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export task xacct\n" );
+
+	/*
 	 * cpusets
 	 */
 	if( lkm_export_cpusets( task_ptr, file, p_offset ) < 0 )
@@ -433,3 +471,84 @@ int lkm_export_cgroup_memory( struct task_struct *task_ptr, LKM_FILE file, unsig
 	return 0;
 
 }
+
+int lkm_export_task_xacct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\nacct_rss_mem1: ", strlen("\nacct_rss_mem1: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->acct_rss_mem1), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nacct_vm_mem1: ", strlen("\nacct_vm_mem1: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->acct_vm_mem1), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nacct_timexpd: ", strlen("\nacct_timexpd: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->acct_timexpd), sizeof(cputime_t), p_offset );
+
+	return 0;
+
+}
+
+int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\nreclaim_state: ", strlen("\nreclaim_state: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->reclaim_state), sizeof(struct reclaim_state*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nbacking_dev_info: ", strlen("\nbacking_dev_info: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->backing_dev_info), sizeof(struct backing_dev_info*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nio_context: ", strlen("\nio_context: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->io_context), sizeof(struct io_context*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nptrace_message: ", strlen("\nptrace_message: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ptrace_message), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nlast_siginfo: ", strlen("\nlast_siginfo: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->last_siginfo), sizeof(siginfo_t*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nioac: ", strlen("\nioac: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ioac), sizeof(struct task_io_accounting), p_offset );
+
+	return 0;
+}
+
+#ifdef CONFIG_LOCKDEP
+int lkm_export_lockdep( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	int writeAmt = 0;
+	int index = 0;
+	char work_buf[100];
+
+	writeAmt = lkm_file_write( file,"\ncurr_chain_key: ", strlen("\ncurr_chain_key: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->curr_chain_key), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nlockdep_depth: ", strlen("\nlockdep_depth: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->lockdep_depth), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nlockdep_recursion: ", strlen("\nlockdep_recursion: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->lockdep_recursion), sizeof(unsigned int), p_offset );
+
+	for( index = 0; index < MAX_LOCK_DEPTH; index++ )
+	{
+
+		memset( work_buf, 0, 100 );
+		sprintf( work_buf, "\nheld_locks-%d: ", index );
+
+		// print header
+		writeAmt = lkm_file_write( file, work_buf, strlen(work_buf), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->held_locks[index]), sizeof(struct held_lock), p_offset );
+
+	}
+
+	writeAmt = lkm_file_write( file,"\nlockdep_reclaim_gfp: ", strlen("\nlockdep_reclaim_gfp: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->lockdep_reclaim_gfp), sizeof(gfp_t), p_offset );
+
+	return 0;
+
+}
+#endif
