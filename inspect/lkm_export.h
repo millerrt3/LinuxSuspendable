@@ -3,6 +3,7 @@
 #define _LKM_EXPORT_H
 
 #include "../types.h"
+#include "../kernel_config.h"
 #include "lkm_utils.h"
 
 #include <linux/kobject.h>
@@ -14,22 +15,41 @@
 #include <linux/pid.h>
 #include <linux/slab.h>
 
-
+#ifdef CONFIG_CPUSETS
 int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
 int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+
+#ifdef CONFIG_CGROUPS
 int lkm_export_cgroups( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
+#ifdef CONFIG_MEMCG
 int lkm_export_cgroup_memory( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
+#ifdef CONFIG_PERF_EVENTS
 int lkm_export_perf_events( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
+#ifdef CONFIG_FUNCTION_GRAPH_TRACER
 int lkm_export_function_graph_tracer( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
+#ifdef CONFIG_TRACING
 int lkm_export_tracing( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
+#ifdef CONFIG_TASK_XACCT
 int lkm_export_task_xacct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
 int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 
-#if 0
 #ifdef CONFIG_TRACE_IRQFLAGS
 int lkm_export_trace_irqflags( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
-#endif
 #endif
 
 #ifdef CONFIG_LOCKDEP

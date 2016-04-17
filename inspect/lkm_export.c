@@ -1,4 +1,5 @@
 #include "../types.h"
+#include "../kernel_config.h"
 #include "lkm_export.h"
 #include "lkm_utils.h"
 
@@ -38,6 +39,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	/*
 	 * SMP waking
 	 */
+#ifdef CONFIG_SMP
 	writeAmt = lkm_file_write( file,"\nwake_entry: ", strlen("\nwake_entry: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->wake_entry), sizeof(struct llist_node), p_offset );
 
@@ -55,6 +57,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	writeAmt = lkm_file_write( file,"\nwake_cpu: ", strlen("\nwake_cpu: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->wake_cpu), sizeof(int), p_offset );
+#endif
 
 	writeAmt = lkm_file_write( file,"\non_rq: ", strlen("\non_rq: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->on_rq), sizeof(int), p_offset );
@@ -81,15 +84,22 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nrt: ", strlen("\nrt: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rt), sizeof(struct sched_rt_entity), p_offset );
 
+#ifdef CONFIG_CGROUP_SCHED
 	writeAmt = lkm_file_write( file,"\nsched_task_group: ", strlen("\nsched_task_group: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_task_group), sizeof(struct task_group*), p_offset );
+#endif
 
 	writeAmt = lkm_file_write( file,"\ndl: ", strlen("\ndl: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->dl), sizeof(struct sched_dl_entity), p_offset );
 
+#ifdef CONFIG_PREEMPT_NOTIFIERS
+	/* TODO */
+#endif
+
+#ifdef CONFIG_BLK_DEV_IO_TRACE
 	writeAmt = lkm_file_write( file,"\nbtrace_seq: ", strlen("\nbtrace_seq: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->btrace_seq), sizeof(unsigned int), p_offset );
-
+#endif
 
 	/*
 	 * Assigned CPUs
@@ -103,11 +113,10 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\ncpus_allowed: ", strlen("\ncpus_allowed: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cpus_allowed), sizeof(cpumask_t), p_offset );
 
-
 	/*
 	 * Preemption
 	 */
-#if 0
+#ifdef CONFIG_PREEMPT_RCU
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_nesting: ", strlen("\nrcu_read_lock_nesting: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_nesting), sizeof(int), p_offset );
 
@@ -116,11 +125,21 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_unlock->need_qs: ", strlen("\nrcu_read_lock_unlock->need_qs: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.need_qs), sizeof(bool), p_offset );
+#endif
 
+#ifdef CONFIG_TASKS_RCU
 	// TODO -- task_ptr->rcu_blocked_node has a significant amount of stuff in it
 	writeAmt = lkm_file_write( file,"\nrcu_tasks_nvcsw: ", strlen("\nrcu_tasks_nvcsw: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_tasks_nvcsw), sizeof(unsigned long), p_offset );
 #endif
+
+
+
+   /*************************************************************************************************/
+   /*                             ADD CONTENT HERE UNTIL TASK_STRUCT COMPLETED                      */
+   /*************************************************************************************************/
+
+
 
 	/*
 	 * journaling filesystem info
@@ -136,16 +155,12 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->bio_list), sizeof(struct bio_list*), p_offset );
 
 	/*
-	 * stacked block device information
-	 */
-	writeAmt = lkm_file_write( file,"\nbio_list: ", strlen("\nbio_list: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->bio_list), sizeof(struct bio_list*), p_offset );
-
-	/*
 	 * Enable the block layer within the linux kernel - CONFG_BLOCK
 	 */
+#ifdef CONFIG_BLOCK
 	writeAmt = lkm_file_write( file,"\nplug: ", strlen("\nplug: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->plug), sizeof(struct blk_plug*), p_offset );
+#endif
 
 	/*
 	 * vm state
@@ -157,32 +172,39 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	/*
 	 * task extended accounting over taskstats
 	 */
+#ifdef CONFIG_TASK_XACCT
 	if( lkm_export_task_xacct( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export task xacct\n" );
+#endif
 
 	/*
 	 * cpusets
 	 */
+#ifdef CONFIG_CPUSETS
 	if( lkm_export_cpusets( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export cpusets\n" );
+#endif
 
   	/*
 	 * cgroups
 	 */
+#ifdef CONFIG_CGROUPS
 	if( lkm_export_cgroups( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export cgroups\n" );
+#endif
 
   	/*
 	 * futex
 	 */
+#ifdef CONFIG_FUTEX
+
 	writeAmt = lkm_file_write( file,"\nrobust_list: ", strlen("\nrobust_list: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->robust_list), sizeof(struct robust_list_head __user *), p_offset );
-
 
 	/*
 	 * compat
 	 */
-#if 0
+#ifdef CONFIG_COMPAT
 	writeAmt = lkm_file_write( file,"\ncompat_robust_list: ", strlen("\ncompat_robust_list: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->compat_robust_list), sizeof(compat_robust_list_head), p_offset );
 #endif
@@ -196,25 +218,35 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\npi_state_cache: ", strlen("\npi_state_cache: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pi_state_cache), sizeof(struct futex_pi_state*), p_offset );
 
+#endif
+
 	/*
 	 * perf events
 	 */
+#ifdef CONFIG_PERF_EVENTS
 	if( lkm_export_perf_events( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export performance events\n" );
+#endif
 
     /*
      * debug preempt
      */
+#ifdef CONFIG_DEBUG_PREEMPT
     writeAmt = lkm_file_write( file,"\npreempt_disable_ip: ", strlen("\npreempt_disable_ip: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->preempt_disable_ip), sizeof(unsigned long), p_offset );
+#endif
 
-#if 0
 	/*
      * numa
      */
+#ifdef CONFIG_NUMA
+	/* TODO - room for extension with kernel that has numa enabled */
     writeAmt = lkm_file_write( file,"\nmempolicy: ", strlen("\nmempolicy: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mempolicy), sizeof(struct mempolicy), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mempolicy), sizeof(struct mempolicy*), p_offset );
+#endif
 
+#ifdef CONFIG_NUMA_BALANCING
+	/* room for extension */
 #endif
 
 	// TODO - may be interesting to dig deeper
@@ -227,10 +259,12 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\ntask_frag: ", strlen("\ntask_frag: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->task_frag), sizeof(struct page_frag), p_offset );
 
+#ifdef CONFIG_TASK_DELAY_ACCT
 	writeAmt = lkm_file_write( file,"\ndelays: ", strlen("\ndelays: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->delays), sizeof(struct task_delay_info*), p_offset );
+#endif
 
-#if 0
+#ifdef CONFIG_FAULT_INJECTION
 	writeAmt = lkm_file_write( file,"\nmake_it_fail: ", strlen("\nmake_it_fail: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->make_it_fail), sizeof(int), p_offset );
 #endif
@@ -249,8 +283,10 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	/*
 	 * latencytop
-	 * NOTE: Not built into the kernel
 	 */
+#ifdef CONFIG_LATENCYTOP
+	/* room for extension */
+#endif
 
 	/*
 	 * timer slack
@@ -263,9 +299,8 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	/*
   	 * Kernel Address Sanitizer (kasan)
-  	 * NOTE: Not built into the kernel
   	 */
-#if 0
+#ifdef CONFIG_KASAN
 	writeAmt = lkm_file_write( file,"\nkasan_depth: ", strlen("\nkasan_depth: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->kasan_depth), sizeof(unsigned int), p_offset );
 #endif
@@ -273,35 +308,49 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	/*
 	 * function graphing tracer
 	 */
+#ifdef CONFIG_FUNCTION_GRAPH_TRACER
 	if( lkm_export_function_graph_tracer( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export function grapher data\n" );
+#endif
 
     /*
-	 * function graphing tracer
+	 * function tracer
 	 */
+#ifdef CONFIG_TRACING
 	if( lkm_export_tracing( task_ptr, file, p_offset ) < 0 )
       printk( KERN_WARNING "linux_inspect->Failed to export the tracing data\n" );
+#endif
 
     /*
      * memory allocation for cgroups
      */
+#ifdef CONFIG_MEMCG
   	if( lkm_export_cgroup_memory( task_ptr, file, p_offset ) < 0 )
   		printk( KERN_WARNING "linux_inspect->Failed to export cgroup memory\n" );
+#endif
 
   	/*
   	 * uprobes
-  	 * NOTE: Not built into the kernel
   	 */
+#ifdef CONFIG_UPROBES
+  	 /* room for extension */
+#endif
 
   	/*
   	 * bcache
   	 * NOTE: Not built into the kernel
   	 */
+#if defined(CONFIG_BCACHE) || defined(CONFIG_BCACHE_MODULE)
+	/* room for extension */
+#endif
 
   	/*
   	 * debug atomic sleep
   	 * NOTE: Not built into the kernel
   	 */
+#ifdef CONFIG_DEBUG_ATOMIC_SLEEP
+	/* room for extension */
+#endif
 
 	return 0;
 }
@@ -327,6 +376,7 @@ int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long
 	return 0;
 }
 
+#ifdef CONFIG_CPUSETS
 int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -352,7 +402,9 @@ int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 
 	return 0;
 }
+#endif
 
+#ifdef CONFIG_CGROUPS
 int lkm_export_cgroups( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -378,7 +430,9 @@ int lkm_export_cgroups( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 
 	return 0;
 }
+#endif
 
+#ifdef CONFIG_PERF_EVENTS
 int lkm_export_perf_events( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 
@@ -407,9 +461,10 @@ int lkm_export_perf_events( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->perf_event_list), sizeof(struct list_head), p_offset );
 
 	return 0;
-
 }
+#endif
 
+#ifdef CONFIG_FUNCTION_GRAPH_TRACER
 int lkm_export_function_graph_tracer( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 
@@ -436,9 +491,10 @@ int lkm_export_function_graph_tracer( struct task_struct *task_ptr, LKM_FILE fil
 	writeAmt = lkm_file_ascii_write( file, (char*)&(value), sizeof(unsigned int), p_offset );
 
 	return 0;
-
 }
+#endif
 
+#ifdef CONFIG_TRACING
 int lkm_export_tracing( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -451,7 +507,9 @@ int lkm_export_tracing( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 
 	return 0;
 }
+#endif
 
+#ifdef CONFIG_MEMCG
 int lkm_export_cgroup_memory( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 
@@ -469,9 +527,10 @@ int lkm_export_cgroup_memory( struct task_struct *task_ptr, LKM_FILE file, unsig
 	// TODO - one last remaining field
 
 	return 0;
-
 }
+#endif
 
+#ifdef CONFIG_TASK_XACCT
 int lkm_export_task_xacct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 
@@ -487,8 +546,8 @@ int lkm_export_task_xacct( struct task_struct *task_ptr, LKM_FILE file, unsigned
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->acct_timexpd), sizeof(cputime_t), p_offset );
 
 	return 0;
-
 }
+#endif
 
 int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
@@ -549,6 +608,5 @@ int lkm_export_lockdep( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->lockdep_reclaim_gfp), sizeof(gfp_t), p_offset );
 
 	return 0;
-
 }
 #endif
