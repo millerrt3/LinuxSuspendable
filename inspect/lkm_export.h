@@ -3,7 +3,6 @@
 #define _LKM_EXPORT_H
 
 #include "../types.h"
-#include "../kernel_config.h"
 #include "lkm_utils.h"
 
 #include <linux/kobject.h>

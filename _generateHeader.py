@@ -46,6 +46,7 @@ for line in in_file.readlines():
         disable_file.write( line )
     elif(len(line) > 0 ):
         # print( "Line: " + line )
+        line = line.replace('=', ' ')
         line = "#define " + line + '\n'
         out_file.write( line )
 
