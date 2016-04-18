@@ -118,6 +118,8 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 #ifdef CONFIG_PREEMPT_RCU
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_nesting: ", strlen("\nrcu_read_lock_nesting: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_nesting), sizeof(int), p_offset );
+
+	// TODO - Need to finish the PREEMPT RCU section
 #if 0
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_unlock->blocked: ", strlen("\nrcu_read_lock_unlock->blocked: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.blocked), sizeof(bool), p_offset );
@@ -140,7 +142,54 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
    /*                             ADD CONTENT HERE UNTIL TASK_STRUCT COMPLETED                      */
    /*************************************************************************************************/
 
+#ifdef CONFIG_AUDITSYSCALL
+	writeAmt = lkm_file_write( file,"\nloginuid: ", strlen("\nloginuid: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->loginuid), sizeof(kuid_t), p_offset );
 
+	writeAmt = lkm_file_write( file,"\nsessionid: ", strlen("\nsessionid: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sessionid), sizeof(unsigned int), p_offset );
+#endif
+
+	writeAmt = lkm_file_write( file,"\nseccomp: ", strlen("\nseccomp: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->seccomp), sizeof(struct seccomp), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nparent_exec_id: ", strlen("\nparent_exec_id: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->parent_exec_id), sizeof(u32), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nself_exec_id: ", strlen("\nself_exec_id: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->self_exec_id), sizeof(u32), p_offset );
+
+	/*
+	 * RT Mutexes
+	 */
+#ifdef CONFIG_RT_MUTEXES
+	if( lkm_export_rt_mutexes( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export real time mutexes\n" );
+#endif
+
+	/*
+	 * Debugging Mutexes
+	 */
+#ifdef CONFIG_DEBUG_MUTEXES
+	if( lkm_export_debug_mutexes( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export debugging mutexes\n" );
+#endif
+	
+	/*
+	 * IRQ flags for tracing
+	 */
+#ifdef CONFIG_TRACE_IRQFLAGS
+	if( lkm_export_trace_irqflags( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export tracing irq\n" );
+#endif
+
+	/*
+	 * lockdep
+	 */
+#ifdef CONFIG_LOCKDEP
+	if( lkm_export_lockdep( task_ptr, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export lockdep\n" );
+#endif
 
 	/*
 	 * journaling filesystem info
@@ -607,6 +656,84 @@ int lkm_export_lockdep( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 
 	writeAmt = lkm_file_write( file,"\nlockdep_reclaim_gfp: ", strlen("\nlockdep_reclaim_gfp: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->lockdep_reclaim_gfp), sizeof(gfp_t), p_offset );
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_TRACE_IRQFLAGS
+int lkm_export_trace_irqflags( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\nirq_events: ", strlen("\nirq_events: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->irq_events), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nhardirq_enable_ip: ", strlen("\nhardirq_enable_ip: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->hardirq_enable_ip), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nhardirq_disable_ip: ", strlen("\nhardirq_disable_ip: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->hardirq_disable_ip), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nhardirq_enable_event: ", strlen("\nhardirq_enable_event: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->hardirq_enable_event), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nhardirq_disable_event: ", strlen("\nhardirq_disable_event: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->hardirq_disable_event), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nhardirqs_enabled: ", strlen("\nhardirqs_enabled: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->hardirqs_enabled), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nhardirq_context: ", strlen("\nhardirq_context: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->hardirq_context), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsoftirq_enable_ip: ", strlen("\nsoftirq_enable_ip: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->softirq_enable_ip), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsoftirq_disable_ip: ", strlen("\nsoftirq_disable_ip: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->softirq_disable_ip), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsoftirq_enable_event: ", strlen("\nsoftirq_enable_event: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->softirq_enable_event), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsoftirq_disable_event: ", strlen("\nsoftirq_disable_event: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->softirq_disable_event), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsoftirqs_enabled: ", strlen("\nsoftirqs_enabled: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->softirqs_enabled), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\nsoftirq_context: ", strlen("\nsoftirq_context: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->softirq_context), sizeof(int), p_offset );
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_DEBUG_MUTEXES
+int lkm_export_debug_mutexes( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\nblocked_on: ", strlen("\nblocked_on: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->blocked_on), sizeof(struct mutex_waiter*), p_offset );
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_RT_MUTEXES
+int lkm_export_rt_mutexes( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\npi_waiters: ", strlen("\npi_waiters: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pi_waiters), sizeof(struct rb_root), p_offset );
+
+	writeAmt = lkm_file_write( file,"\npi_waiters_leftmost: ", strlen("\npi_waiters_leftmost: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pi_waiters_leftmost), sizeof(struct rb_root*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\npi_blocked_on: ", strlen("\npi_blocked_on: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pi_blocked_on), sizeof(struct rt_mutex_waiter*), p_offset );
 
 	return 0;
 }

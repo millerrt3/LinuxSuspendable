@@ -55,4 +55,12 @@ int lkm_export_trace_irqflags( struct task_struct *task_ptr, LKM_FILE file, unsi
 int lkm_export_lockdep( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 #endif
 
+#ifdef CONFIG_DEBUG_MUTEXES
+int lkm_export_debug_mutexes( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
+#ifdef CONFIG_RT_MUTEXES
+int lkm_export_rt_mutexes( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+#endif
+
 #endif
