@@ -1,3 +1,22 @@
+/**
+ * @file control.c
+ * @brief Userspace control application for the linux inspection module
+ *
+ * @details
+ *		The linux inspection module provides the ability for a userspace
+ *		application to get profiled by using a module that was loaded
+ *		into the linux kernel. The module provides the ability to perform
+ *		a deep inspection of a userspace process. Using this module,
+ *		it becomes possible to perform an analysis of a process and how it
+ *		is modeled within the linux kernel.
+ *
+ *		This linux inspection module makes use of the sysfs mechanism
+ *		to allow a userspace application to initiate operations. This
+ *		application makes use of that interface and provides a series
+ *		of helpful operations.
+ *
+ * @date April 18, 2016
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,16 +29,28 @@
 
 #include "../types.h"
 
+/**
+ * @brief Represents the format of an operation passed through the sysfs interface
+ *
+ * @details
+ *		The linux inspection module provides an interface through the sysfs mechanism
+ *		within the kernel. The sysfs allows a userspace application to push data to the
+ *		kernel module. This structure represents an operation that is being requested
+ *		of the kernel module.
+ */
 typedef struct
 {
 
-	int pid;
-	int cmd_mask;
-	int repeat_count;
-	int delay;
+	int pid;           /**< PID of the process to be inspected */
+	int cmd_mask;      /**< Mask specifying which of the process elements should be exported */
+	int repeat_count;  /**< How many times should the operation be repeated */
+	int delay;         /**< Lenth of the delay in between operations */
 	
 } CTRL_Config_t;
 
+/**
+ * @brief Prints the help menu to the console (similar to man page)
+ */
 void print_help()
 {
 
@@ -102,6 +133,12 @@ int main( int argc, char **args )
 
 	}
 
+
+	/*
+	 * This section of the code will process the arguments. If an argument
+	 * was not passed into the application then a series of default operations
+	 * are assumed and configured.
+	 */
 	if( config.pid == 0 )
 	{
 		config.pid = getpid();
@@ -122,12 +159,13 @@ int main( int argc, char **args )
 		config.cmd_mask |= LKM_TASK_STRUCT;
 	}
 
-	// Open the pid file from sysfs in order to tell the
-	// inspection module the pid of this process
+	// opens the sysfs file that is provided by the linux module
+	// as method for requesting operations.
 	pid_fd = open( "/sys/kernel/linux_inspect/operation", O_RDWR );
 	if( pid_fd < 0 )
 	{
-		printf( "ERROR: Unable to open lkm_pid file; 0x%08x\n", errno );
+		printf( "ERROR: Unable to open interface to module; 0x%08x\n", errno );
+		printf( "        Please ensure that module is installed and running\n" );
 		return 0;
 	}
 
@@ -135,17 +173,19 @@ int main( int argc, char **args )
 	operation.cmd = config.cmd_mask;
 	operation.proc_id = config.pid;
 
-	index = 0;
+	// this loop will perform a complete iteration for each
+	// of the selected repeat_counts
 	for( index = 0; index < config.repeat_count; index++ )
 	{
 
 		// retrieve current time
 		clock_gettime( CLOCK_REALTIME, &tspec );
 
+		// generate name of the directory that will contain the exported data
 		memset( operation.dir_name, 0, MAX_DIR_SIZE );
 		snprintf( operation.dir_name, MAX_DIR_SIZE, "%d-%d-inspection", operation.proc_id, (int)tspec.tv_sec );
 
-		// convert PID to ascii representation
+		// print helpful state information
 		printf( "Process PID: %d, Command: 0x%08x, dir=%s\n", operation.proc_id, operation.cmd, operation.dir_name );
 
 		// create output directory
@@ -167,7 +207,7 @@ int main( int argc, char **args )
 
 		}
 
-		// tell the inspection module the pid of this process
+		// provide the linux inspection module with the requested operation
 		writeAmt = write( pid_fd, &operation, sizeof(LKM_Operation_t) );
 		if( writeAmt < sizeof(LKM_Operation_t) )
 		{
@@ -182,6 +222,7 @@ int main( int argc, char **args )
 	// close file descriptor the pid
 	close( pid_fd );
 
+	// return
 	return 0;
 
 }

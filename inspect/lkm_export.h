@@ -1,7 +1,20 @@
-
+/**
+ * @file lkm_export.h
+ * @brief Contains utility functions for exporting a processes contents
+ *
+ * @details
+ *		This file defines the function that are used for exporting all
+ *		the contents of a process within the linux kernel.
+ *
+ * @version 1.0
+ * @date 04/18/2016
+ */
 #ifndef _LKM_EXPORT_H
 #define _LKM_EXPORT_H
 
+// *************************************************************************
+//                               INCLUDES
+// *************************************************************************
 #include "../types.h"
 #include "lkm_utils.h"
 
