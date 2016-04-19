@@ -25,8 +25,35 @@ void print_help()
 
 	printf( "\n" );
 	printf( "-------------------------------------------------------\n" );
-	printf( "                Inspection Module Controller           \n" );
+	printf( "                Inspection Module Control           \n" );
 	printf( "-------------------------------------------------------\n" );
+	printf( "This is the userspace control application for the linux\n" );
+	printf( "process inspection module. The module provides the ability\n" );
+	printf( "capture a running processes state into a series of human\n" );
+	printf( "readable files. These files can the be used to investigate\n" );
+	printf( "what information the linux kernel currently knows about a\n" );
+	printf( "running process.                                        \n" );
+	printf( "\n");
+	printf( "SYNOPSIS:\n");
+	printf( "\tcontrol [options] [targets]\n" );
+	printf( "\n");
+	printf( "OPTIONS:\n" );
+	printf( "\t-c, Number of sequential times that the target processes\n" );
+	printf( "\t    data should be exported. Default is 1.\n");
+	printf( "\n");
+	printf( "\t-p, PID of the process that should be targeted for export.\n");
+	printf( "\t    The default action is to profile the \"control\" process.\n");
+	printf( "\n");
+	printf( "\t-d, Number of seconds between each call to module for an\n");
+	printf( "\t    export to take place. Default is 1 second.");
+	printf( "\n");
+	printf( "TARGETS:\n" );
+	printf( "\t--task, A high level export of the processes task_struct will\n");
+	printf( "\t    be performed. Enabled by default.\n");
+	printf( "\n");
+	printf( "AUTHORS:\n" );
+	printf( "\tCameron Whipple, Robert Miller\n" );
+	printf( "\n");
 
 }
 
@@ -40,18 +67,17 @@ int main( int argc, char **args )
 	LKM_Operation_t operation;
 	CTRL_Config_t config;
 
-	if( argc <= 1 )
-	{
-		print_help();
-		return 0;
-	}
-
 	memset( &config, 0, sizeof(CTRL_Config_t) );
 
 	// process arguments
 	while( index < argc )
 	{
 
+		if( strcmp( args[index], "-h" ) == 0 && (argc > index) )
+		{
+			print_help();
+			return 0;
+		}
 		if( strcmp( args[index], "-p" ) == 0 && (argc > index) )
 		{
 			config.pid = atoi( args[++index] );
@@ -88,7 +114,7 @@ int main( int argc, char **args )
 
 	if( config.delay == 0 )
 	{
-		config.delay = 2;
+		config.delay = 1;
 	}
 
 	if( config.cmd_mask == 0 )
