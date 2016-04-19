@@ -1,3 +1,22 @@
+/**
+ * @file control.c
+ * @brief Userspace control application for the linux inspection module
+ *
+ * @details
+ *		The linux inspection module provides the ability for a userspace
+ *		application to get profiled by using a module that was loaded
+ *		into the linux kernel. The module provides the ability to perform
+ *		a deep inspection of a userspace process. Using this module,
+ *		it becomes possible to perform an analysis of a process and how it
+ *		is modeled within the linux kernel.
+ *
+ *		This linux inspection module makes use of the sysfs mechanism
+ *		to allow a userspace application to initiate operations. This
+ *		application makes use of that interface and provides a series
+ *		of helpful operations.
+ *
+ * @date April 18, 2016
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,23 +29,62 @@
 
 #include "../types.h"
 
+/**
+ * @brief Represents the format of an operation passed through the sysfs interface
+ *
+ * @details
+ *		The linux inspection module provides an interface through the sysfs mechanism
+ *		within the kernel. The sysfs allows a userspace application to push data to the
+ *		kernel module. This structure represents an operation that is being requested
+ *		of the kernel module.
+ */
 typedef struct
 {
 
-	int pid;
-	int cmd_mask;
-	int repeat_count;
-	int delay;
+	int pid;           /**< PID of the process to be inspected */
+	int cmd_mask;      /**< Mask specifying which of the process elements should be exported */
+	int repeat_count;  /**< How many times should the operation be repeated */
+	int delay;         /**< Lenth of the delay in between operations */
 	
 } CTRL_Config_t;
 
+/**
+ * @brief Prints the help menu to the console (similar to man page)
+ */
 void print_help()
 {
 
 	printf( "\n" );
 	printf( "-------------------------------------------------------\n" );
-	printf( "                Inspection Module Controller           \n" );
+	printf( "                Inspection Module Control           \n" );
 	printf( "-------------------------------------------------------\n" );
+	printf( "This is the userspace control application for the linux\n" );
+	printf( "process inspection module. The module provides the ability\n" );
+	printf( "capture a running processes state into a series of human\n" );
+	printf( "readable files. These files can the be used to investigate\n" );
+	printf( "what information the linux kernel currently knows about a\n" );
+	printf( "running process.                                        \n" );
+	printf( "\n");
+	printf( "SYNOPSIS:\n");
+	printf( "\tcontrol [options] [targets]\n" );
+	printf( "\n");
+	printf( "OPTIONS:\n" );
+	printf( "\t-c, Number of sequential times that the target processes\n" );
+	printf( "\t    data should be exported. Default is 1.\n");
+	printf( "\n");
+	printf( "\t-p, PID of the process that should be targeted for export.\n");
+	printf( "\t    The default action is to profile the \"control\" process.\n");
+	printf( "\n");
+	printf( "\t-d, Number of seconds between each call to module for an\n");
+	printf( "\t    export to take place. Default is 1 second.");
+	printf( "\n");
+	printf( "TARGETS:\n" );
+	printf( "\t--task, A high level export of the processes task_struct will\n");
+	printf( "\t    be performed. Enabled by default.\n");
+	printf( "\n");
+	printf( "AUTHORS:\n" );
+	printf( "\tCameron Whipple, Robert Miller\n" );
+	printf( "\n");
 
 }
 
@@ -40,18 +98,17 @@ int main( int argc, char **args )
 	LKM_Operation_t operation;
 	CTRL_Config_t config;
 
-	if( argc <= 1 )
-	{
-		print_help();
-		return 0;
-	}
-
 	memset( &config, 0, sizeof(CTRL_Config_t) );
 
 	// process arguments
 	while( index < argc )
 	{
 
+		if( strcmp( args[index], "-h" ) == 0 && (argc > index) )
+		{
+			print_help();
+			return 0;
+		}
 		if( strcmp( args[index], "-p" ) == 0 && (argc > index) )
 		{
 			config.pid = atoi( args[++index] );
@@ -76,6 +133,12 @@ int main( int argc, char **args )
 
 	}
 
+
+	/*
+	 * This section of the code will process the arguments. If an argument
+	 * was not passed into the application then a series of default operations
+	 * are assumed and configured.
+	 */
 	if( config.pid == 0 )
 	{
 		config.pid = getpid();
@@ -88,7 +151,7 @@ int main( int argc, char **args )
 
 	if( config.delay == 0 )
 	{
-		config.delay = 2;
+		config.delay = 1;
 	}
 
 	if( config.cmd_mask == 0 )
@@ -96,12 +159,13 @@ int main( int argc, char **args )
 		config.cmd_mask |= LKM_TASK_STRUCT;
 	}
 
-	// Open the pid file from sysfs in order to tell the
-	// inspection module the pid of this process
+	// opens the sysfs file that is provided by the linux module
+	// as method for requesting operations.
 	pid_fd = open( "/sys/kernel/linux_inspect/operation", O_RDWR );
 	if( pid_fd < 0 )
 	{
-		printf( "ERROR: Unable to open lkm_pid file; 0x%08x\n", errno );
+		printf( "ERROR: Unable to open interface to module; 0x%08x\n", errno );
+		printf( "        Please ensure that module is installed and running\n" );
 		return 0;
 	}
 
@@ -109,17 +173,19 @@ int main( int argc, char **args )
 	operation.cmd = config.cmd_mask;
 	operation.proc_id = config.pid;
 
-	index = 0;
+	// this loop will perform a complete iteration for each
+	// of the selected repeat_counts
 	for( index = 0; index < config.repeat_count; index++ )
 	{
 
 		// retrieve current time
 		clock_gettime( CLOCK_REALTIME, &tspec );
 
+		// generate name of the directory that will contain the exported data
 		memset( operation.dir_name, 0, MAX_DIR_SIZE );
 		snprintf( operation.dir_name, MAX_DIR_SIZE, "%d-%d-inspection", operation.proc_id, (int)tspec.tv_sec );
 
-		// convert PID to ascii representation
+		// print helpful state information
 		printf( "Process PID: %d, Command: 0x%08x, dir=%s\n", operation.proc_id, operation.cmd, operation.dir_name );
 
 		// create output directory
@@ -141,7 +207,7 @@ int main( int argc, char **args )
 
 		}
 
-		// tell the inspection module the pid of this process
+		// provide the linux inspection module with the requested operation
 		writeAmt = write( pid_fd, &operation, sizeof(LKM_Operation_t) );
 		if( writeAmt < sizeof(LKM_Operation_t) )
 		{
@@ -156,6 +222,7 @@ int main( int argc, char **args )
 	// close file descriptor the pid
 	close( pid_fd );
 
+	// return
 	return 0;
 
 }
