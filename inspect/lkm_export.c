@@ -142,7 +142,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 */
 #if defined(CONFIG_SCHEDSTATS) || defined(CONFIG_TASK_DELAY_ACCT)
 	writeAmt = lkm_file_write( file,"\nsched_info: ", strlen("\nsched_info: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_info, sizeof(struct sched_info), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_info), sizeof(struct sched_info), p_offset );
 #endif
 
 
@@ -150,14 +150,14 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 * Tasks
 	 */
 	writeAmt = lkm_file_write( file,"\ntasks: ", strlen("\ntasks: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->tasks, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->tasks), sizeof(struct list_head), p_offset );
 #ifdef CONFIG_SMP
 	// TODO - Expand structs
 	writeAmt = lkm_file_write( file,"\npushable_tasks: ", strlen("\npushable_tasks: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pushable_tasks, sizeof(struct plist_node), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pushable_tasks), sizeof(struct plist_node), p_offset );
 
 	writeAmt = lkm_file_write( file,"\npushable_dl_tasks: ", strlen("\npushable_dl_tasks: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pushable_dl_tasks, sizeof(struct rb_node), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pushable_dl_tasks), sizeof(struct rb_node), p_offset );
 #endif
 
 
@@ -166,26 +166,26 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 * Memory
 	 */
 	writeAmt = lkm_file_write( file,"\nmm: ", strlen("\nmm: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mm, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mm), sizeof(void*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nactive_mm: ", strlen("\nactive_mm: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->active_mm, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->active_mm), sizeof(void*), p_offset );
 
 #ifdef CONFIG_COMPAT_BRK
 	writeAmt = lkm_file_write( file,"\nbrk_randomized: ", strlen("\nbrk_randomized: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->brk_randomized, sizeof(unsigned), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->brk_randomized), sizeof(unsigned), p_offset );
 #endif
 
 	writeAmt = lkm_file_write( file,"\nvmacache_seqnum: ", strlen("\nvmacache_seqnum: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vmacache_seqnum, sizeof(u32), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vmacache_seqnum), sizeof(u32), p_offset );
 
 	// TODO - Expand the struct
 	writeAmt = lkm_file_write( file,"\nvmacache: ", strlen("\nvmacache: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vmacache, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vmacache), sizeof(void*), p_offset );
 
 #ifdef SPLIT_RSS_COUNTING
 	writeAmt = lkm_file_write( file,"\nrss_stat: ", strlen("\nrss_stat: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rss_stat, sizeof(struct task_rss_stat), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rss_stat), sizeof(struct task_rss_stat), p_offset );
 #endif
 
 
@@ -193,35 +193,38 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 * Task State
 	 */
 	writeAmt = lkm_file_write( file,"\nexit_state: ", strlen("\nexit_state: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->exit_state, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->exit_state), sizeof(int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nexit_code: ", strlen("\nexit_code: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->exit_code, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->exit_code), sizeof(int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nexit_signal: ", strlen("\nexit_signal: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->exit_signal, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->exit_signal), sizeof(int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\npdeath_signal: ", strlen("\nepdeath_signal "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pdeath_signal, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pdeath_signal), sizeof(int), p_offset );
 
 	// TODO - Possibly protected by siglock
 	writeAmt = lkm_file_write( file,"\njobctl: ", strlen("\njobctl: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->jobctl, sizeof(unsigned int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->jobctl), sizeof(unsigned int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\npersonality: ", strlen("\npersonality: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->personality, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->personality), sizeof(int), p_offset );
 
+/*
+TODO - These are bitfields
 	writeAmt = lkm_file_write( file,"\nin_execve: ", strlen("\nin_execve: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->in_execve, sizeof(unsigned), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->in_execve), sizeof(unsigned int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nin_iowait: ", strlen("\nin_iowait: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->in_iowait, sizeof(unsigned), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->in_iowait), sizeof(unsigned int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nsched_reset_on_fork: ", strlen("\nsched_reset_on_fork: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_reset_on_fork, sizeof(unsigned), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_reset_on_fork), sizeof(unsigned int), p_offset );
 		
-	writeAmt = lkm_file_write( file,"\nsched_contributed_to_load: ", strlen("\nsched_contributed_to_load: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_contributed_to_load, sizeof(unsigned), p_offset );
+	writeAmt = lkm_file_write( file,"\nsched_contributes_to_load: ", strlen("\nsched_contributes_to_load: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sched_contributes_to_load), sizeof(unsigned int), p_offset );
+*/
 
 #ifdef CONFIG_MEMCG_KMEM
 	writeAmt = lkm_file_write( file,"\n: ", strlen("\n: "), p_offset );
@@ -230,22 +233,22 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 	// TODO - interpret flags; ensure that access is atomic
 	writeAmt = lkm_file_write( file,"\natomic_flags: ", strlen("\natomic_flags: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->atomic_flags, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->atomic_flags), sizeof(unsigned long), p_offset );
 
 	// TODO - Expand struct
 	writeAmt = lkm_file_write( file,"\nrestart_block: ", strlen("\nrestart_block: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->restart_block, sizeof(struct restart_block), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->restart_block), sizeof(struct restart_block), p_offset );
 
 	writeAmt = lkm_file_write( file,"\npid: ", strlen("\npid: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pid, sizeof(pid_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pid), sizeof(pid_t), p_offset );
 		
 	writeAmt = lkm_file_write( file,"\ntgid: ", strlen("\ntgid: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->tgid, sizeof(pid_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->tgid), sizeof(pid_t), p_offset );
 	
 	// TODO - Exposing this may make buffer overflow attacks easier; do we want to hide it or highlight that as a feature?
 #ifdef CONFIG_CC_STACKPROTECTOR
 	writeAmt = lkm_file_write( file,"\nstack_canary: ", strlen("\nstack_canary: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stack_canary, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stack_canary), sizeof(unsigned long), p_offset );
 #endif
 
 
@@ -254,105 +257,105 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 */
 	// TODO - Consider expanding parent task struct
 	writeAmt = lkm_file_write( file,"\nreal_parent: ", strlen("\nreal_parent: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_parent, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_parent), sizeof(void*), p_offset );
 
 	// TODO - Consider expanding parent task struct
 	writeAmt = lkm_file_write( file,"\nparent: ", strlen("\nparent: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->parent, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->parent), sizeof(void*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nchildren: ", strlen("\nchildren: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->children, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->children), sizeof(struct list_head), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nsibling: ", strlen("\nsibling: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sibling, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sibling), sizeof(struct list_head), p_offset );
 
 	// TODO - Consider expanding task struct
 	writeAmt = lkm_file_write( file,"\ngroup_leader: ", strlen("\ngroup_leader: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->group_leader, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->group_leader), sizeof(void*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nptraced: ", strlen("\nptraced: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ptraced, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ptraced), sizeof(struct list_head), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nptrace_entry: ", strlen("\nptrace_entry: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ptrace_entry, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ptrace_entry), sizeof(struct list_head), p_offset );
 
 	// TODO - Consider expanding struct
 	writeAmt = lkm_file_write( file,"\npids: ", strlen("\npids: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pids, sizeof(struct pid_link), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pids), sizeof(struct pid_link), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nthread_group: ", strlen("\nthread_group: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread_group, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread_group), sizeof(struct list_head), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nthread_node: ", strlen("\nthread_node: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread_node, sizeof(struct list_head), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread_node), sizeof(struct list_head), p_offset );
 
 	// TODO - Consider expanding
 	writeAmt = lkm_file_write( file,"\nvfork_done: ", strlen("\nvfork_done: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vfork_done, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vfork_done), sizeof(void*), p_offset );
 
 	// TODO - Consider dereferencing
 	writeAmt = lkm_file_write( file,"\nset_child_tid: ", strlen("\nset_child_tid: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->set_child_tid, sizeof(int*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->set_child_tid), sizeof(int*), p_offset );
 
 	// TODO - Consider dereferencing
 	writeAmt = lkm_file_write( file,"\nclear_child_tid: ", strlen("\nclear_child_tid: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->clear_child_tid, sizeof(int*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->clear_child_tid), sizeof(int*), p_offset );
 
 
 	/*
 	 * Timing
 	 */
 	writeAmt = lkm_file_write( file,"\nutime: ", strlen("\nutime: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->utime, sizeof(cputime_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->utime), sizeof(cputime_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nstime: ", strlen("\nstime: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stime, sizeof(cputime_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stime), sizeof(cputime_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nutimescaled: ", strlen("\nutimescaled: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->utimescaled, sizeof(cputime_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->utimescaled), sizeof(cputime_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nstimescaled: ", strlen("\nstimescaled: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stimescaled, sizeof(cputime_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stimescaled), sizeof(cputime_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\ngtime: ", strlen("\ngtime: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->gtime, sizeof(cputime_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->gtime), sizeof(cputime_t), p_offset );
 
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 	// TODO - Consider expanding
 	writeAmt = lkm_file_write( file,"\nprev_cputime: ", strlen("\nprev_cputime: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->prev_cputime, sizeof(struct cputime), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->prev_cputime), sizeof(struct cputime), p_offset );
 #endif
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 	writeAmt = lkm_file_write( file,"\nvtime_seqlock: ", strlen("\nvtime_seqlock: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vtime_seqlock, sizeof(seqlock_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vtime_seqlock), sizeof(seqlock_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nvtime_snap: ", strlen("\nvtime_snap: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vtime_snap, sizeof(unsigned long long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->vtime_snap), sizeof(unsigned long long), p_offset );
 
 	// TODO - Research the usage of the vtime_snap_whence enum to potentitally interpret these fields
 #endif
 
 	writeAmt = lkm_file_write( file,"\nnvcsw: ", strlen("\nnvcsw: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nvcsw, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nvcsw), sizeof(unsigned long), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nnivcsw: ", strlen("\nnivcsw: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nivcsw, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nivcsw), sizeof(unsigned long), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nstart_time: ", strlen("\nstart_time: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->start_time, sizeof(u64), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->start_time), sizeof(u64), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nreal_start_time: ", strlen("\nreal_start_time: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_start_time, sizeof(u64), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_start_time), sizeof(u64), p_offset );
 
 
 	/*
 	 * Memory Map Fault Info
 	 */
 	writeAmt = lkm_file_write( file,"\nmin_flt: ", strlen("\nmin_flt: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->min_flt, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->min_flt), sizeof(unsigned long), p_offset );
 
-	writeAmt = lkm_file_write( file,"\nmax_flt: ", strlen("\nmax_flt: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->max_flt, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_write( file,"\nmaj_flt: ", strlen("\nmaj_flt: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->maj_flt), sizeof(unsigned long), p_offset );
 
 
 	/*
@@ -360,11 +363,11 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 */
 	// TODO - Consider expanding struct	
 	writeAmt = lkm_file_write( file,"\nreal_cred: ", strlen("\nreal_cred: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_cred, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_cred), sizeof(void*), p_offset );
 
 	// TODO - Consider expanding struct
 	writeAmt = lkm_file_write( file,"\ncred: ", strlen("\ncred: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cred, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cred), sizeof(void*), p_offset );
 
 	// TODO - This is the task name; we may want to use this elsewhere
 	writeAmt = lkm_file_write( file,"\ncomm: ", strlen("\ncomm: "), p_offset );
@@ -375,40 +378,40 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 * File System
 	 */
 	writeAmt = lkm_file_write( file,"\nlink_count: ", strlen("\nlink_count: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->link_count, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->link_count), sizeof(int), p_offset );
 
 	writeAmt = lkm_file_write( file,"\ntotal_link_count: ", strlen("\ntotal_link_count: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->total_link_count, sizeof(int), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->total_link_count), sizeof(int), p_offset );
 
 #ifdef CONFIG_SYSVIPC
 	// TODO - Consider expanding
 	writeAmt = lkm_file_write( file,"\nsysvsem: ", strlen("\nsysvsem: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sysvsem, sizeof(struct sysv_sem), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sysvsem), sizeof(struct sysv_sem), p_offset );
 
 	// TODO - Consider expanding
 	writeAmt = lkm_file_write( file,"\nsysvshm: ", strlen("\nsysvshm: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sysvshm, sizeof(struct sysv_shm), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sysvshm), sizeof(struct sysv_shm), p_offset );
 #endif
 #ifdef CONFIG_DETECT_HUNG_TASK
 	writeAmt = lkm_file_write( file,"\nlast_switch_count: ", strlen("\nlast_switch_count: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->last_switch_count, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->last_switch_count), sizeof(unsigned long), p_offset );
 #endif
 
 	// TODO - Consider expanding
 	writeAmt = lkm_file_write( file,"\nthread: ", strlen("\nthread: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread, sizeof(struct thread_struct), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread), sizeof(struct thread_struct), p_offset );
 
 	// TODO - This is the file system struct; it may be important to display to users
 	writeAmt = lkm_file_write( file,"\nfs: ", strlen("\nfs: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->fs, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->fs), sizeof(void*), p_offset );
 
 	// TODO - This contains all open files
 	writeAmt = lkm_file_write( file,"\nfiles: ", strlen("\nfiles: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->files, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->files), sizeof(void*), p_offset );
 
 	// TODO - This contains namespaces
 	writeAmt = lkm_file_write( file,"\nnsproxy: ", strlen("\nnsproxy: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nsproxy, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nsproxy), sizeof(void*), p_offset );
 
 
 	// TODO - Expand parsing of signal handling
@@ -416,48 +419,48 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	 * Signal Handling
 	 */
 	writeAmt = lkm_file_write( file,"\nsignal: ", strlen("\nsignal: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->signal, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->signal), sizeof(void*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nsighand: ", strlen("\nsighand: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sighand, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sighand), sizeof(void*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nblocked: ", strlen("\nblocked: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->blocked, sizeof(sigset_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->blocked), sizeof(sigset_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nreal_blocked: ", strlen("\nreal_blocked: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_blocked, sizeof(sigset_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_blocked), sizeof(sigset_t), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nsaved_sigmask: ", strlen("\nsaved_sigmask: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->saved_sigmask, sizeof(sigset_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->saved_sigmask), sizeof(sigset_t), p_offset );
 
 	// TODO - Expand
 	writeAmt = lkm_file_write( file,"\npending: ", strlen("\npending: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pending, sizeof(struct sigpending), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pending), sizeof(struct sigpending), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nsas_ss_sp: ", strlen("\nsas_ss_sp: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sas_ss_sp, sizeof(unsigned long), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sas_ss_sp), sizeof(unsigned long), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nsas_ss_size: ", strlen("\nsas_ss_size: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sas_ss_size, sizeof(size_t), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sas_ss_size), sizeof(size_t), p_offset );
 
 	// TODO - This is a function pointer; how do we want to deal with that?
 	writeAmt = lkm_file_write( file,"\nnotifier: ", strlen("\nnotifier: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->notifier, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->notifier), sizeof(void*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nnotifier_data: ", strlen("\nnotifier_data: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->notifier_data, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->notifier_data), sizeof(void*), p_offset );
 
 	// TODO - Possibly dereference this?
 	writeAmt = lkm_file_write( file,"\nnotifier_mask: ", strlen("\nnotifier_mask: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->notifier_mask, sizeof(sigset_t*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->notifier_mask), sizeof(sigset_t*), p_offset );
 
 	// TODO - Expand Struct
 	writeAmt = lkm_file_write( file,"\ntask_works: ", strlen("\ntask_works: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->task_works, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->task_works), sizeof(void*), p_offset );
 
 	// TODO - Expand Struct
 	writeAmt = lkm_file_write( file,"\naudit_context: ", strlen("\naudit_context: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->audit_context, sizeof(void*), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->audit_context), sizeof(void*), p_offset );
 
 
 #ifdef CONFIG_AUDITSYSCALL
