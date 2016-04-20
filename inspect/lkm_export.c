@@ -106,6 +106,33 @@ static void lkm_export_print_flags( unsigned int flags, LKM_FILE file, unsigned 
 
 }
 
+static void lkm_export_task_cputime_struct( struct task_cputime cpu, LKM_FILE file, unsigned long long *p_offset  )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\n\tutime: ", strlen("\n\tutime: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.utime), sizeof(cputime_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tstime: ", strlen("\n\tstime: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.stime), sizeof(cputime_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tsum_exec_runtime: ", strlen("\n\tsum_exec_runtime: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.sum_exec_runtime), sizeof(unsigned long long), p_offset );
+}
+
+static void lkm_export_cputime_struct( struct cputime cpu, LKM_FILE file, unsigned long long *p_offset  )
+{
+
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\n\tutime: ", strlen("\n\tutime: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.utime), sizeof(cputime_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tstime: ", strlen("\n\tstime: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.stime), sizeof(cputime_t), p_offset );
+
+}
+
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -408,9 +435,9 @@ TODO - These are bitfields
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->gtime), sizeof(cputime_t), p_offset );
 
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
-	// TODO - Consider expanding
 	writeAmt = lkm_file_write( file,"\nprev_cputime: ", strlen("\nprev_cputime: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->prev_cputime), sizeof(struct cputime), p_offset );
+	lkm_export_cputime_struct( file, task_ptr->prev_cputime, p_offset );
 #endif
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 	writeAmt = lkm_file_write( file,"\nvtime_seqlock: ", strlen("\nvtime_seqlock: "), p_offset );
@@ -444,6 +471,21 @@ TODO - These are bitfields
 	writeAmt = lkm_file_write( file,"\nmaj_flt: ", strlen("\nmaj_flt: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->maj_flt), sizeof(unsigned long), p_offset );
 
+	/*
+	 * cputime and timers
+	 */
+	writeAmt = lkm_file_write( file,"\ncputime_expires: ", strlen("\ncputime_expires: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cputime_expires), sizeof(struct task_cputime), p_offset );
+	lkm_export_task_cputime_struct( task_ptr->cputime_expires, file, p_offset );
+
+	writeAmt = lkm_file_write( file,"\ncpu_timers[0]: ", strlen("\ncpu_timers[0]: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cpu_timers[0]), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ncpu_timers[1]: ", strlen("\ncpu_timers[1]: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cpu_timers[1]), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\ncpu_timers[2]: ", strlen("\ncpu_timers[2]: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->cpu_timers[2]), sizeof(struct list_head), p_offset );
 
 	/*
 	 * Credentials
