@@ -13,6 +13,99 @@
 #include <linux/cgroup.h>
 #include <linux/atomic.h>
 
+static void lkm_export_print_flags( unsigned int flags, LKM_FILE file, unsigned long long *p_offset  )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_ascii_write( file, (char*)&(flags), sizeof(unsigned int), p_offset );
+
+	// check to see if any flag at all was set, if so then adjust pointer in file
+	if( flags & 0xfffffff8 )
+		writeAmt = lkm_file_write( file,"\n\t", strlen("\n\t"), p_offset );
+
+	if( flags & PF_EXITING )
+		writeAmt = lkm_file_write( file,"PF_EXITING | ", strlen("PF_EXITING | "), p_offset );
+
+	if( flags & PF_EXITPIDONE )
+		writeAmt = lkm_file_write( file,"PF_EXITPIDONE | ", strlen("PF_EXITPIDONE | "), p_offset );
+
+	if( flags & PF_VCPU )
+		writeAmt = lkm_file_write( file,"PF_VCPU | ", strlen("PF_VCPU | "), p_offset );
+
+	if( flags & PF_WQ_WORKER )
+		writeAmt = lkm_file_write( file,"PF_WQ_WORKER | ", strlen("PF_WQ_WORKER | "), p_offset );
+
+	if( flags & PF_FORKNOEXEC )
+		writeAmt = lkm_file_write( file,"PF_FORKNOEXEC | ", strlen("PF_FORKNOEXEC | "), p_offset );
+
+	if( flags & PF_MCE_PROCESS )
+		writeAmt = lkm_file_write( file,"PF_MCE_PROCESS | ", strlen("PF_MCE_PROCESS | "), p_offset );
+
+	if( flags & PF_SUPERPRIV )
+		writeAmt = lkm_file_write( file,"PF_SUPERPRIV | ", strlen("PF_SUPERPRIV | "), p_offset );
+
+	if( flags & PF_DUMPCORE )
+		writeAmt = lkm_file_write( file,"PF_DUMPCORE | ", strlen("PF_DUMPCORE | "), p_offset );
+
+	if( flags & PF_SIGNALED )
+		writeAmt = lkm_file_write( file,"PF_SIGNALED | ", strlen("PF_SIGNALED | "), p_offset );
+
+	if( flags & PF_MEMALLOC )
+		writeAmt = lkm_file_write( file,"PF_MEMALLOC | ", strlen("PF_MEMALLOC | "), p_offset );
+
+	if( flags & PF_NPROC_EXCEEDED )
+		writeAmt = lkm_file_write( file,"PF_NPROC_EXCEEDED | ", strlen("PF_NPROC_EXCEEDED | "), p_offset );
+
+	if( flags & PF_USED_MATH )
+		writeAmt = lkm_file_write( file,"PF_USED_MATH | ", strlen("PF_USED_MATH | "), p_offset );
+
+	if( flags & PF_USED_ASYNC )
+		writeAmt = lkm_file_write( file,"PF_USED_ASYNC | ", strlen("PF_USED_ASYNC | "), p_offset );
+
+	if( flags & PF_NOFREEZE )
+		writeAmt = lkm_file_write( file,"PF_NOFREEZE | ", strlen("PF_NOFREEZE | "), p_offset );
+
+	if( flags & PF_FROZEN )
+		writeAmt = lkm_file_write( file,"PF_FROZEN | ", strlen("PF_FROZEN | "), p_offset );
+
+	if( flags & PF_FSTRANS )
+		writeAmt = lkm_file_write( file,"PF_FSTRANS | ", strlen("PF_FSTRANS | "), p_offset );
+
+	if( flags & PF_KSWAPD )
+		writeAmt = lkm_file_write( file,"PF_KSWAPD | ", strlen("PF_KSWAPD | "), p_offset );
+
+	if( flags & PF_MEMALLOC_NOIO )
+		writeAmt = lkm_file_write( file,"PF_MEMALLOC_NOIO | ", strlen("PF_MEMALLOC_NOIO | "), p_offset );
+
+	if( flags & PF_LESS_THROTTLE )
+		writeAmt = lkm_file_write( file,"PF_LESS_THROTTLE | ", strlen("PF_LESS_THROTTLE | "), p_offset );
+
+	if( flags & PF_KTHREAD )
+		writeAmt = lkm_file_write( file,"PF_KTHREAD | ", strlen("PF_KTHREAD | "), p_offset );
+
+	if( flags & PF_RANDOMIZE )
+		writeAmt = lkm_file_write( file,"PF_RANDOMIZE | ", strlen("PF_RANDOMIZE | "), p_offset );
+
+	if( flags & PF_SWAPWRITE )
+		writeAmt = lkm_file_write( file,"PF_SNAPWRITE | ", strlen("PF_SNAPWRITE | "), p_offset );
+
+	if( flags & PF_NO_SETAFFINITY )
+		writeAmt = lkm_file_write( file,"PF_NO_SETAFFINITY | ", strlen("PF_NO_SETAFFINITY | "), p_offset );
+
+	if( flags & PF_MCE_EARLY )
+		writeAmt = lkm_file_write( file,"PF_MCE_EARLY | ", strlen("PF_MCE_EARLY | "), p_offset );
+
+	if( flags & PF_MUTEX_TESTER )
+		writeAmt = lkm_file_write( file,"PF_MUTEX_TESTER | ", strlen("PF_MUTEX_TESTER | "), p_offset );
+
+	if( flags & PF_FREEZER_SKIP )
+		writeAmt = lkm_file_write( file,"PF_FREEZER_SKIP | ", strlen("PF_FREEZER_SKIP | "), p_offset );
+
+	if( flags & PF_SUSPEND_TASK )
+		writeAmt = lkm_file_write( file,"PF_SUSPEND_TASK | ", strlen("PF_SUSPEND_TASK | "), p_offset );
+
+}
+
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -27,13 +120,11 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nstack: ", strlen("\nstack: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->stack), sizeof(void*), p_offset );
 
-	// TODO -- Flags are listed @ line 1961; should we interpret them for the user?
 	writeAmt = lkm_file_write( file,"\nflags: ", strlen("\nflags: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->flags), sizeof(unsigned int), p_offset );
+	lkm_export_print_flags( task_ptr->flags, file, p_offset );
 
 	writeAmt = lkm_file_write( file,"\nptrace: ", strlen("\nptrace: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ptrace), sizeof(unsigned int), p_offset );
-
 
 	/*
 	 * SMP waking
@@ -231,7 +322,6 @@ TODO - These are bitfields
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->, sizeof(int), p_offset );
 #endif
 
-	// TODO - interpret flags; ensure that access is atomic
 	writeAmt = lkm_file_write( file,"\natomic_flags: ", strlen("\natomic_flags: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->atomic_flags), sizeof(unsigned long), p_offset );
 
