@@ -134,6 +134,36 @@ static void lkm_export_cputime_struct( struct cputime cpu, LKM_FILE file, unsign
 
 }
 
+static void lkm_export_task_io_accounting( struct task_io_accounting tioa, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+#ifdef CONFIG_TASK_XACCT
+	writeAmt = lkm_file_write( file,"\n\trchar: ", strlen("\n\trchar: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.rchar), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\twchar: ", strlen("\n\twchar: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.wchar), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tsyscr: ", strlen("\n\tsyscr: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.syscr), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tsyscw: ", strlen("\n\tsyscw: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.syscw), sizeof(u64), p_offset );
+#endif
+
+#ifdef CONFIG_TASK_IO_ACCOUNTING
+	writeAmt = lkm_file_write( file,"\n\tread_bytes: ", strlen("\n\tread_bytes: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.read_bytes), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\twrite_bytes: ", strlen("\n\twrite_bytes: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.write_bytes), sizeof(u64), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tcancelled_write_bytes: ", strlen("\n\tcancelled_write_bytes: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(tioa.cancelled_write_bytes), sizeof(u64), p_offset );
+#endif
+}
+
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -1068,7 +1098,7 @@ int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned l
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->last_siginfo), sizeof(siginfo_t*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nioac: ", strlen("\nioac: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->ioac), sizeof(struct task_io_accounting), p_offset );
+	lkm_export_task_io_accounting( task_ptr->ioac, file, p_offset );
 
 	return 0;
 }
