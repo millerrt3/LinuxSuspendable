@@ -5,7 +5,7 @@
 #include <linux/pid.h>
 #include <linux/sched.h>  // tasklist_lock
 
-#include "../types.h"
+#include "types.h"
 #include "lkm_utils.h"
 
 struct task_struct* lkm_get_task_struct( int pid )

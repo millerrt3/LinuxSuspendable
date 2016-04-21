@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include "../types.h"
+#include "types.h"
 
 /**
  * @brief Represents the format of an operation passed through the sysfs interface

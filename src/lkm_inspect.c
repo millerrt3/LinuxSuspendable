@@ -1,4 +1,4 @@
-#include "../types.h"
+#include "types.h"
 #include "lkm_utils.h"
 #include "lkm_export.h"
 
