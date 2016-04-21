@@ -12,6 +12,7 @@
 #include <linux/slab.h>
 #include <linux/cgroup.h>
 #include <linux/atomic.h>
+#include <linux/signal.h>
 
 static void lkm_export_print_flags( unsigned int flags, LKM_FILE file, unsigned long long *p_offset  )
 {
@@ -539,6 +540,9 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	/*
 	 * Signal Handling
 	 */
+	// See http://lxr.free-electrons.com/source/kernel/signal.c?v=2.6.34#L2455
+	spin_lock_irq(&task_ptr->sighand->siglock);
+
 	writeAmt = lkm_file_write( file,"\nsignal: ", strlen("\nsignal: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->signal), sizeof(struct signal_*), p_offset );
 
@@ -546,16 +550,22 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sighand), sizeof(struct sighand_*), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nblocked: ", strlen("\nblocked: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->blocked), sizeof(sigset_t), p_offset );
+	if( lkm_export_sigset_t( task_ptr->blocked, file, p_offset ) != 0 )
+		printk( KERN_WARNING "linux_inspect->blocked sigset export failed\n" );
 
 	writeAmt = lkm_file_write( file,"\nreal_blocked: ", strlen("\nreal_blocked: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->real_blocked), sizeof(sigset_t), p_offset );
+	if( lkm_export_sigset_t( task_ptr->real_blocked, file, p_offset ) != 0 )
+		printk( KERN_WARNING "linux_inspect->real blocked sigset export failed\n" );
 
 	writeAmt = lkm_file_write( file,"\nsaved_sigmask: ", strlen("\nsaved_sigmask: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->saved_sigmask), sizeof(sigset_t), p_offset );
+	if( lkm_export_sigset_t( task_ptr->saved_sigmask, file, p_offset ) != 0 )
+		printk( KERN_WARNING "linux_inspect->saved sigmask signal export failed\n" );
 
 	writeAmt = lkm_file_write( file,"\npending: ", strlen("\npending: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pending), sizeof(struct sigpending), p_offset );
+	if( lkm_export_sigpending( task_ptr->pending, file, p_offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export process pending signals\n" );
+
+	spin_unlock_irq(&task_ptr->sighand->siglock);
 
 	writeAmt = lkm_file_write( file,"\nsas_ss_sp: ", strlen("\nsas_ss_sp: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->sas_ss_sp), sizeof(unsigned long), p_offset );
@@ -1176,3 +1186,89 @@ int lkm_export_rt_mutexes( struct task_struct *task_ptr, LKM_FILE file, unsigned
 	return 0;
 }
 #endif
+
+int lkm_export_sigpending( struct sigpending signal, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\n\tlist: ", strlen("\n\tlist: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(signal.list), sizeof(struct list_head), p_offset );
+	if( lkm_export_sigset_t( signal.signal, file, p_offset ) != 0 )
+		printk( KERN_WARNING "ERROR: lkm_export_sigpending->signal export failed\n" );
+
+	return 0;
+}
+
+int lkm_export_sigset_t( sigset_t set, LKM_FILE file, unsigned long long *p_offset )
+{
+
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\n\tsignal: ", strlen("\n\tsignal: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(set), sizeof(sigset_t), p_offset );
+
+
+	writeAmt = lkm_file_write( file,"\n\tsignals: ", strlen("\n\tsignals: "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGHUP) )
+		writeAmt = lkm_file_write( file, "SIGHUP | ", strlen("SIGHUP | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGINT) )
+		writeAmt = lkm_file_write( file, "SIGINT | ", strlen("SIGINT | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGQUIT) )
+		writeAmt = lkm_file_write( file, "SIGQUIT | ", strlen("SIGQUIT | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGILL) )
+		writeAmt = lkm_file_write( file, "SIGILL | ", strlen("SIGILL | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGTRAP) )
+		writeAmt = lkm_file_write( file, "SIGTRAP | ", strlen("SIGTRAP | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGABRT) )
+		writeAmt = lkm_file_write( file, "SIGABRT | ", strlen("SIGABRT | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGIOT) )
+		writeAmt = lkm_file_write( file, "SIGIOT | ", strlen("SIGIOT | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGBUS) )
+		writeAmt = lkm_file_write( file, "SIGBUS | ", strlen("SIGBUS | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGFPE) )
+		writeAmt = lkm_file_write( file, "SIGFPE | ", strlen("SIGFPE | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGKILL) )
+		writeAmt = lkm_file_write( file, "SIGKILL | ", strlen("SIGKILL | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGUSR1) )
+		writeAmt = lkm_file_write( file, "SIGUSR1 | ", strlen("SIGUSR1 | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGSEGV) )
+		writeAmt = lkm_file_write( file, "SIGSEGV | ", strlen("SIGSEGV | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGUSR2) )
+		writeAmt = lkm_file_write( file, "SIGUSR2 | ", strlen("SIGUSR2 | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGPIPE) )
+		writeAmt = lkm_file_write( file, "SIGPIPE | ", strlen("SIGPIPE | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGALRM) )
+		writeAmt = lkm_file_write( file, "SIGALRM | ", strlen("SIGALRM | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGTERM) )
+		writeAmt = lkm_file_write( file, "SIGTERM | ", strlen("SIGTERM | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGSTKFLT) )
+		writeAmt = lkm_file_write( file, "SIGSTKFLT | ", strlen("SIGSTKFLT | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGCHLD) )
+		writeAmt = lkm_file_write( file, "SIGCHLD | ", strlen("SIGCHLD | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGCONT) )
+		writeAmt = lkm_file_write( file, "SIGCONT | ", strlen("SIGCONT | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGSTOP) )
+		writeAmt = lkm_file_write( file, "SIGSTOP | ", strlen("SIGSTOP | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGTSTP) )
+		writeAmt = lkm_file_write( file, "SIGTSTP | ", strlen("SIGTSTP | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGTTIN) )
+		writeAmt = lkm_file_write( file, "SIGTTIN | ", strlen("SIGTTIN | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGTTOU) )
+		writeAmt = lkm_file_write( file, "SIGTTOU | ", strlen("SIGTTOU | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGURG) )
+		writeAmt = lkm_file_write( file, "SIGURG | ", strlen("SIGURG | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGXCPU) )
+		writeAmt = lkm_file_write( file, "SIGXCPU | ", strlen("SIGXCPU | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGXFSZ) )
+		writeAmt = lkm_file_write( file, "SIGXFSZ | ", strlen("SIGXFSZ | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGVTALRM) )
+		writeAmt = lkm_file_write( file, "SIGVTALRM | ", strlen("SIGVTALRM | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGPROF) )
+		writeAmt = lkm_file_write( file, "SIGPROF | ", strlen("SIGPROF | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGWINCH) )
+		writeAmt = lkm_file_write( file, "SIGWINCH | ", strlen("SIGWINCH | "), p_offset );
+	if( (set.sig[0]) & sigmask(SIGIO) )
+		writeAmt = lkm_file_write( file, "SIGIO | ", strlen("SIGIO | "), p_offset );
+
+	return 0;
+}
