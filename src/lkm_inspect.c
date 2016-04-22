@@ -35,6 +35,7 @@ static void __generate_path( char *dest, char *dir, char *filename )
 static ssize_t operation_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
   // TODO -- Print out usage message that this doesn't actually exist
+  printk( KERN_WARNING "linux_inspect->read operation not currently supported\n" );
   return 0;
 }
 
@@ -49,9 +50,8 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
   char full_path[MAX_PATH_SIZE];
 
   // copies the operation struct from userspace
-  // TODO - Make use of the copyfromuser() function
-  memcpy( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
-  // memset( dir_name, 0, MAX_DIR_SIZE );
+  // memcpy( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
+  copy_from_user( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
   memset( file_name, 0, MAX_FILENAME_SIZE );
   memset( full_path, 0, MAX_PATH_SIZE );
 
@@ -98,12 +98,29 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
     lkm_file_close( file );
 
   }
-#if 0
   if( (rv == 0) && (lkm_opstruct.cmd & LKM_TASK_MEMORY) )
   {
 
+    LKM_FILE file;
+    unsigned long long offset = 0;
+
+    // creates the full path
+    __generate_path( full_path, lkm_opstruct.dir_name, "task_memory_struct.txt" );
+
+    file = lkm_file_open( full_path, LKM_Write );
+    if( file == NULL )
+    {
+      printk( KERN_WARNING "linux_inspect->Failed to open %s\n", full_path );
+      return count;
+    }
+
+    if( lkm_export_task_memory( task_ptr, file, &offset ) < 0 )
+      printk( KERN_WARNING "linux_inspect->Failed to export task_struct\n" );
+
+    // close file
+    lkm_file_close( file );
+
   }
-#endif
 
   // release lock over the task_struct listing
   rcu_read_unlock();

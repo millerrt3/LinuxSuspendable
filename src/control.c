@@ -128,6 +128,10 @@ int main( int argc, char **args )
 		{
 			config.cmd_mask |= LKM_TASK_STRUCT;
 		}
+		else if( strcmp( args[index], "--mem") == 0  && (argc > index) )
+		{
+			config.cmd_mask |= LKM_TASK_MEMORY;
+		}
 
 		index++;
 
