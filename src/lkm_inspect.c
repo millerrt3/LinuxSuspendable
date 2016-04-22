@@ -50,8 +50,8 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
   char full_path[MAX_PATH_SIZE];
 
   // copies the operation struct from userspace
-  // memcpy( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
-  copy_from_user( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
+  memcpy( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
+  // copy_from_user( &lkm_opstruct, buf, sizeof(LKM_Operation_t));
   memset( file_name, 0, MAX_FILENAME_SIZE );
   memset( full_path, 0, MAX_PATH_SIZE );
 

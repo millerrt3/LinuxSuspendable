@@ -43,6 +43,7 @@ int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long lo
 int lkm_export_sigpending( struct sigpending signal, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_sigset_t( sigset_t set, LKM_FILE file, unsigned long long *p_offset );
 int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_mm_context( mm_context_t *ptr, LKM_FILE file, unsigned long long *p_offset );
 
 #ifdef CONFIG_CPUSETS
 int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );

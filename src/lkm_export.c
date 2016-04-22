@@ -12,7 +12,6 @@
 #include <linux/slab.h>
 #include <linux/cgroup.h>
 #include <linux/atomic.h>
-#include <linux/atomic-long.h>
 #include <linux/signal.h>
 
 static void lkm_export_print_flags( unsigned int flags, LKM_FILE file, unsigned long long *p_offset  )
@@ -122,6 +121,7 @@ static void lkm_export_task_cputime_struct( struct task_cputime cpu, LKM_FILE fi
 	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.sum_exec_runtime), sizeof(unsigned long long), p_offset );
 }
 
+#ifdef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 static void lkm_export_cputime_struct( struct cputime cpu, LKM_FILE file, unsigned long long *p_offset  )
 {
 
@@ -134,6 +134,7 @@ static void lkm_export_cputime_struct( struct cputime cpu, LKM_FILE file, unsign
 	writeAmt = lkm_file_ascii_write( file, (char*)&(cpu.stime), sizeof(cputime_t), p_offset );
 
 }
+#endif
 
 static void lkm_export_task_io_accounting( struct task_io_accounting tioa, LKM_FILE file, unsigned long long *p_offset )
 {
@@ -904,7 +905,7 @@ int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 		// generate header print
 		memset( buffer, 0, 100 );
-		sprintf( buffer, "vmacache[%d]: ", index );
+		sprintf( buffer, "\nvmacache[%d]: ", index );
 
 		// print header
 		writeAmt = lkm_file_write( file, buffer, strlen(buffer), p_offset );
@@ -1381,8 +1382,6 @@ int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long lo
 
 	writeAmt = lkm_file_write( file,"\n\tpgd: ", strlen("\n\tpgd: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->pgd), sizeof(pgd_t*), p_offset );
-	writeAmt = lkm_file_write( file,"\n\t\tpgd: ", strlen("\n\t\tpgd: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->pgd->pgd), sizeof(unsigned long), p_offset );
 
 	atomic_value = atomic_read( &(ptr->mm_users) );
 	writeAmt = lkm_file_write( file,"\n\tmm_users: ", strlen("\n\tmm_users: "), p_offset );
@@ -1392,12 +1391,12 @@ int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long lo
 	writeAmt = lkm_file_write( file,"\n\tmm_count: ", strlen("\n\tmm_count: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(atomic_value), sizeof(int), p_offset );
 
-	atomic_long_value = ATOMIC_LONG_READ_OP( &(ptr->nr_ptes) );
+	atomic_long_value = atomic_read( &(ptr->nr_ptes) );
 	writeAmt = lkm_file_write( file,"\n\tnr_ptes: ", strlen("\n\tnr_ptes: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(atomic_long_value), sizeof(long), p_offset );
 
-#if CONFIG_PGTABLES_LEVELS > 2
-	atomic_long_value = ATOMIC_LONG_READ_OP( &(ptr->nr_pmds) );
+#if defined(CONFIG_PGTABLES_LEVELS) && CONFIG_PGTABLES_LEVELS > 2
+	atomic_long_value = atomic_read( &(ptr->nr_pmds) );
 	writeAmt = lkm_file_write( file,"\n\tnr_pmds: ", strlen("\n\tnr_pmds: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(atomic_long_value), sizeof(long), p_offset );
 #endif
@@ -1488,7 +1487,96 @@ int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long lo
 
 	}
 
-	// http://lxr.free-electrons.com/source/include/linux/mm_types.h?v=4.1#L401
+	writeAmt = lkm_file_write( file,"\n\trss_stat: ", strlen("\n\trss_stat: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->rss_stat), sizeof(struct mm_rss_stat), p_offset );
+	for( index = 0; index < NR_MM_COUNTERS; index++ )
+	{
+
+		memset( buffer, 0, 100 );
+		sprintf( buffer, "\n\t\tcount[%d]: ", index );
+
+		writeAmt = lkm_file_write( file, buffer, strlen(buffer), p_offset );
+
+		atomic_long_value = atomic_read( &(ptr->rss_stat.count[index]) );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(atomic_long_value), sizeof(long), p_offset );
+	}
+
+	// TODO - Possible area for further expansion if time is available
+	writeAmt = lkm_file_write( file,"\n\tbinfmt: ", strlen("\n\tbinfmt: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->binfmt), sizeof(struct linux_binfmt*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tcpu_vm_mask_var: ", strlen("\n\tcpu_vm_mask_var: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->cpu_vm_mask_var), sizeof(cpumask_var_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tcontext: ", strlen("\n\tcontext: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->context), sizeof(mm_context_t), p_offset );
+	if( lkm_export_mm_context( &(ptr->context), file, p_offset ) != 0 )
+		printk( KERN_WARNING "ERROR: lkm_export_mm_struct->failed to export context\n" );
+
+	writeAmt = lkm_file_write( file,"\n\tflags: ", strlen("\n\tflags: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->flags), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tcore_state: ", strlen("\n\tcore_state: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->core_state), sizeof(struct core_state*), p_offset );
+
+	if( ptr->core_state != 0 )
+	{
+		atomic_value = atomic_read( &(ptr->core_state->nr_threads) );
+		writeAmt = lkm_file_write( file,"\n\t\tnr_threads: ", strlen("\n\t\tnr_threads: "), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)(atomic_value), sizeof(int), p_offset );
+		writeAmt = lkm_file_write( file,"\n\t\tdumper: ", strlen("\n\t\tdumper: "), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->core_state->dumper), sizeof(struct core_thread), p_offset );
+		writeAmt = lkm_file_write( file,"\n\t\t\ttask: ", strlen("\n\t\t\ttask: "), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->core_state->dumper.task), sizeof(struct task_struct*), p_offset );
+		writeAmt = lkm_file_write( file,"\n\t\t\tnext: ", strlen("\n\t\t\tnext: "), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->core_state->dumper.next), sizeof(struct core_thread*), p_offset );
+		writeAmt = lkm_file_write( file,"\n\t\tstartup: ", strlen("\n\t\tstartup: "), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->core_state->startup), sizeof(struct completion), p_offset );
+	}
+
+#ifdef CONFIG_AIO
+	spin_lock_irq(&ptr->ioctx_lock);
+
+	writeAmt = lkm_file_write( file,"\n\tioctx_table: ", strlen("\n\tioctx_table: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->ioctx_table), sizeof(struct kioctx_table*), p_offset );
+
+	spin_unlock_irq(&ptr->ioctx_lock);
+#endif
+
+#ifdef CONFIG_MEMCG
+	writeAmt = lkm_file_write( file,"\n\towner: ", strlen("\n\towner: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->owner), sizeof(struct task_struct*), p_offset );
+#endif
+
+	writeAmt = lkm_file_write( file,"\n\texe_file: ", strlen("\n\texe_file: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->exe_file), sizeof(struct file __rcu *), p_offset );
+
+#ifdef CONFIG_MMU_NOTIFIER
+	/* room for extension */
+#endif
+
+#if defined(CONFIG_TRANSPARENT_HUGEPAGE) && !USE_SPLIT_PMD_PTLOCKS
+	/* room for extension */
+#endif
+
+#ifdef CONFIG_CPUMASK_OFFSTACK
+	/* room for extension */
+#endif
+
+#ifdef CONFIG_NUMA_BALANCING
+	/* room for extension */
+#endif
+
+#if defined(CONFIG_NUMA_BALANCING) || defined( CONFIG_COMPACTION )
+	/* room for extension */
+#endif
+
+	writeAmt = lkm_file_write( file,"\n\tuprobes_state: ", strlen("\n\tuprobes_state: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->uprobes_state), sizeof(struct uprobes_state), p_offset );
+
+#ifdef CONFIG_X86_INTEL_MPX
+	/* room for extension */
+#endif
 
 	return 0;
 
@@ -1500,8 +1588,36 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 	int writeAmt = 0;
 
 	// TODO - This function needs to be implemented
-	printk( KERN_ERROR "lkm_export_vm_area_struct->Not Implemented\n" );
+	printk( KERN_WARNING "lkm_export_vm_area_struct->Not Implemented\n" );
 
 	return -1;
 
+}
+
+int lkm_export_mm_context( mm_context_t *ptr, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+	u64 atomic_long_value = 0;
+
+#ifdef CONFIG_CPU_HAS_ASID
+	atomic_long_value = atomic_read( &(ptr->id) );
+	writeAmt = lkm_file_write( file,"\n\t\tid: ", strlen("\n\t\tid: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(atomic_long_value), sizeof(u64), p_offset );
+#else
+	writeAmt = lkm_file_write( file,"\n\t\tswitch_pending: ", strlen("\n\t\tswitch_pending: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->switch_pending), sizeof(int), p_offset );
+#endif
+
+	writeAmt = lkm_file_write( file,"\n\t\tvmalloc_seq: ", strlen("\n\t\tvmalloc_seq: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vmalloc_seq), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\tsigpage: ", strlen("\n\t\tsigpage: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->sigpage), sizeof(unsigned long), p_offset );
+
+#ifdef CONFIG_VDSO
+	writeAmt = lkm_file_write( file,"\n\t\tvdso: ", strlen("\n\t\tvdso: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vdso), sizeof(unsigned long), p_offset );
+#endif
+
+	return 0;
 }
