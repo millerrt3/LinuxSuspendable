@@ -13,6 +13,7 @@
 #include <linux/cgroup.h>
 #include <linux/atomic.h>
 #include <linux/signal.h>
+#include <linux/mm.h>
 
 static void lkm_export_print_flags( unsigned int flags, LKM_FILE file, unsigned long long *p_offset  )
 {
@@ -1587,6 +1588,12 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 
 	int writeAmt = 0;
 
+	if( p_offset == 0 )
+		return INVALID_ARG;
+
+	if( ptr == 0 )
+		return 0;
+
 	writeAmt = lkm_file_write( file,"\n\tvm_start: ", strlen("\n\tvm_start: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_start), sizeof(unsigned long), p_offset );
 
@@ -1635,9 +1642,12 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 
 	writeAmt = lkm_file_write( file,"\n\tvm_private_data: ", strlen("\n\tvm_private_data: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_private_data), sizeof(void*), p_offset );
+
+#if 0
 #ifdef CONFIG_MMU
 	writeAmt = lkm_file_write( file,"\n\tvm_region: ", strlen("\n\tvm_region: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_region), sizeof(struct vm_region*), p_offset );
+#endif
 #endif
 
 	return 0;
@@ -1697,14 +1707,18 @@ int lkm_export_vm_flags( unsigned long flags, LKM_FILE file, unsigned long long 
 		writeAmt = lkm_file_write( file,"VM_MAYSHARE | ", strlen("VM_MAYSHARE | "), p_offset );
 	if( flags & VM_GROWSDOWN )
 		writeAmt = lkm_file_write( file,"VM_GROWSDOWN | ", strlen("VM_GROWSDOWN | "), p_offset );
+#if 0
 	if( flags & VM_UFFD_MISSING )
 		writeAmt = lkm_file_write( file,"VM_UFFD_MISSING | ", strlen("VM_UFFD_MISSING | "), p_offset );
+#endif
 	if( flags & VM_PFNMAP )
 		writeAmt = lkm_file_write( file,"VM_PFNMAP | ", strlen("VM_PFNMAP | "), p_offset );
 	if( flags & VM_DENYWRITE )
 		writeAmt = lkm_file_write( file,"VM_DENYWRITE | ", strlen("VM_DENYWRITE | "), p_offset );
+#if 0
 	if( flags & VM_UFFD_WP )
 		writeAmt = lkm_file_write( file,"VM_UFFD_WP | ", strlen("VM_UFFD_WP | "), p_offset );
+#endif
 	if( flags & VM_LOCKED )
 		writeAmt = lkm_file_write( file,"VM_LOCKED | ", strlen("VM_LOCKED | "), p_offset );
 	if( flags & VM_IO )
@@ -1717,8 +1731,10 @@ int lkm_export_vm_flags( unsigned long flags, LKM_FILE file, unsigned long long 
 		writeAmt = lkm_file_write( file,"VM_DONTCOPY | ", strlen("VM_DONTCOPY | "), p_offset );
 	if( flags & VM_DONTEXPAND )
 		writeAmt = lkm_file_write( file,"VM_DONTEXPAND | ", strlen("VM_DONTEXPAND | "), p_offset );
+#if 0
 	if( flags & VM_LOCKONFAULT )
 		writeAmt = lkm_file_write( file,"VM_LOCKONFAULT | ", strlen("VM_LOCKONFAULT | "), p_offset );
+#endif
 	if( flags & VM_ACCOUNT )
 		writeAmt = lkm_file_write( file,"VM_ACCOUNT | ", strlen("VM_ACCOUNT | "), p_offset );
 	if( flags & VM_NORESERVE )
