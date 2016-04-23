@@ -1583,10 +1583,12 @@ int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long lo
 
 }
 
+// Allocated memory region within linux kernel
 int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 
 	int writeAmt = 0;
+	unsigned long vm_size = 0;
 
 	if( p_offset == 0 )
 		return INVALID_ARG;
@@ -1599,6 +1601,10 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 
 	writeAmt = lkm_file_write( file,"\n\tvm_end: ", strlen("\n\tvm_end: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_end), sizeof(unsigned long), p_offset );
+
+	vm_size = vm_end - vm_start;
+	writeAmt = lkm_file_write( file,"\n\tvm_size: ", strlen("\n\tvm_size: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(vm_size), sizeof(unsigned long), p_offset );
 
 	writeAmt = lkm_file_write( file,"\n\tvm_next: ", strlen("\n\tvm_next: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_next), sizeof(struct vm_area_struct*), p_offset );
@@ -1654,6 +1660,7 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 
 }
 
+// Processes Address Space in linux kernel
 int lkm_export_mm_context( mm_context_t *ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
