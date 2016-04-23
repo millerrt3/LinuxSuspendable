@@ -1587,10 +1587,60 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 
 	int writeAmt = 0;
 
-	// TODO - This function needs to be implemented
-	printk( KERN_WARNING "lkm_export_vm_area_struct->Not Implemented\n" );
+	writeAmt = lkm_file_write( file,"\n\tvm_start: ", strlen("\n\tvm_start: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_start), sizeof(unsigned long), p_offset );
 
-	return -1;
+	writeAmt = lkm_file_write( file,"\n\tvm_end: ", strlen("\n\tvm_end: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_end), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_next: ", strlen("\n\tvm_next: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_next), sizeof(struct vm_area_struct*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_prev: ", strlen("\n\tvm_prev: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_prev), sizeof(struct vm_area_struct*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_rb: ", strlen("\n\tvm_rb: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_rb), sizeof(struct rb_node), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\trb_subtree_gap: ", strlen("\n\trb_subtree_gap: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->rb_subtree_gap), sizeof(unsigned long), p_offset );
+
+	/* TODO - consider actually going through exporting the contents in this structure */
+	writeAmt = lkm_file_write( file,"\n\tvm_mm: ", strlen("\n\tvm_mm: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_mm), sizeof(struct mm_struct*), p_offset );
+
+	/* TODO - find the flags values for the protection (Access Permissions) */
+	writeAmt = lkm_file_write( file,"\n\tvm_page_prot: ", strlen("\n\tvm_page_prot: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_page_prot), sizeof(pgprot_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_flags: ", strlen("\n\tvm_flags: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_flags), sizeof(unsigned long), p_offset );
+	if( lkm_export_vm_flags( ptr->vm_flags, file, p_offset) != 0 )
+		printk( KERN_WARNING "lkm_export_vm_area_struct->Exporting vm_flags\n" );
+
+	writeAmt = lkm_file_write( file,"\n\tanon_vma_chain: ", strlen("\n\tanon_vma_chain: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->anon_vma_chain), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tanon_vma: ", strlen("\n\tanon_vma: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->anon_vma), sizeof(struct anon_vma*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_ops: ", strlen("\n\tvm_ops: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_ops), sizeof(struct vm_operations_struct*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_pgoff: ", strlen("\n\tvm_pgoff: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_pgoff), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_file: ", strlen("\n\tvm_file: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_file), sizeof(struct file*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tvm_private_data: ", strlen("\n\tvm_private_data: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_private_data), sizeof(void*), p_offset );
+#ifdef CONFIG_MMU
+	writeAmt = lkm_file_write( file,"\n\tvm_region: ", strlen("\n\tvm_region: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_region), sizeof(struct vm_region*), p_offset );
+#endif
+
+	return 0;
 
 }
 
@@ -1620,4 +1670,80 @@ int lkm_export_mm_context( mm_context_t *ptr, LKM_FILE file, unsigned long long 
 #endif
 
 	return 0;
+}
+
+int lkm_export_vm_flags( unsigned long flags, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	if( flags != VM_NONE )
+		writeAmt = lkm_file_write( file,"\n\t\tflags: ", strlen("\n\t\tflags: "), p_offset );
+
+	if( flags & VM_READ )
+		writeAmt = lkm_file_write( file,"VM_READ | ", strlen("VM_READ | "), p_offset );
+	if( flags & VM_WRITE )
+		writeAmt = lkm_file_write( file,"VM_WRITE | ", strlen("VM_WRITE | "), p_offset );
+	if( flags & VM_EXEC )
+		writeAmt = lkm_file_write( file,"VM_EXEC | ", strlen("VM_EXEC | "), p_offset );
+	if( flags & VM_SHARED )
+		writeAmt = lkm_file_write( file,"VM_SHARED | ", strlen("VM_SHARED | "), p_offset );
+	if( flags & VM_MAYREAD )
+		writeAmt = lkm_file_write( file,"VM_MAYREAD | ", strlen("VM_MAYREAD | "), p_offset );
+	if( flags & VM_MAYWRITE )
+		writeAmt = lkm_file_write( file,"VM_MAYWRITE | ", strlen("VM_MAYWRITE | "), p_offset );
+	if( flags & VM_MAYEXEC )
+		writeAmt = lkm_file_write( file,"VM_MAYEXEC | ", strlen("VM_MAYEXEC | "), p_offset );
+	if( flags & VM_MAYSHARE )
+		writeAmt = lkm_file_write( file,"VM_MAYSHARE | ", strlen("VM_MAYSHARE | "), p_offset );
+	if( flags & VM_GROWSDOWN )
+		writeAmt = lkm_file_write( file,"VM_GROWSDOWN | ", strlen("VM_GROWSDOWN | "), p_offset );
+	if( flags & VM_UFFD_MISSING )
+		writeAmt = lkm_file_write( file,"VM_UFFD_MISSING | ", strlen("VM_UFFD_MISSING | "), p_offset );
+	if( flags & VM_PFNMAP )
+		writeAmt = lkm_file_write( file,"VM_PFNMAP | ", strlen("VM_PFNMAP | "), p_offset );
+	if( flags & VM_DENYWRITE )
+		writeAmt = lkm_file_write( file,"VM_DENYWRITE | ", strlen("VM_DENYWRITE | "), p_offset );
+	if( flags & VM_UFFD_WP )
+		writeAmt = lkm_file_write( file,"VM_UFFD_WP | ", strlen("VM_UFFD_WP | "), p_offset );
+	if( flags & VM_LOCKED )
+		writeAmt = lkm_file_write( file,"VM_LOCKED | ", strlen("VM_LOCKED | "), p_offset );
+	if( flags & VM_IO )
+		writeAmt = lkm_file_write( file,"VM_IO | ", strlen("VM_IO | "), p_offset );
+	if( flags & VM_SEQ_READ )
+		writeAmt = lkm_file_write( file,"VM_SEQ_READ | ", strlen("VM_SEQ_READ | "), p_offset );
+	if( flags & VM_RAND_READ )
+		writeAmt = lkm_file_write( file,"VM_RAND_READ | ", strlen("VM_RAND_READ | "), p_offset );
+	if( flags & VM_DONTCOPY )
+		writeAmt = lkm_file_write( file,"VM_DONTCOPY | ", strlen("VM_DONTCOPY | "), p_offset );
+	if( flags & VM_DONTEXPAND )
+		writeAmt = lkm_file_write( file,"VM_DONTEXPAND | ", strlen("VM_DONTEXPAND | "), p_offset );
+	if( flags & VM_LOCKONFAULT )
+		writeAmt = lkm_file_write( file,"VM_LOCKONFAULT | ", strlen("VM_LOCKONFAULT | "), p_offset );
+	if( flags & VM_ACCOUNT )
+		writeAmt = lkm_file_write( file,"VM_ACCOUNT | ", strlen("VM_ACCOUNT | "), p_offset );
+	if( flags & VM_NORESERVE )
+		writeAmt = lkm_file_write( file,"VM_NORESERVE | ", strlen("VM_NORESERVE | "), p_offset );
+	if( flags & VM_HUGETLB )
+		writeAmt = lkm_file_write( file,"VM_HUGETLB | ", strlen("VM_HUGETLB | "), p_offset );
+	if( flags & VM_ARCH_1 )
+		writeAmt = lkm_file_write( file,"VM_ARCH_1 | ", strlen("VM_ARCH_1 | "), p_offset );
+	if( flags & VM_ARCH_2 )
+		writeAmt = lkm_file_write( file,"VM_ARCH_2 | ", strlen("VM_ARCH_2 | "), p_offset );
+	if( flags & VM_DONTDUMP )
+		writeAmt = lkm_file_write( file,"VM_DONTDUMP | ", strlen("VM_DONTDUMP | "), p_offset );
+#ifdef CONFIG_MEM_SOFT_DIRTY
+	if( flags & VM_SOFTYDIRTY )
+		writeAmt = lkm_file_write( file,"VM_SOFTYDIRTY | ", strlen("VM_SOFTYDIRTY | "), p_offset );
+#endif
+	if( flags & VM_MIXEDMAP )
+		writeAmt = lkm_file_write( file,"VM_MIXEDMAP | ", strlen("VM_MIXEDMAP | "), p_offset );
+	if( flags & VM_HUGEPAGE )
+		writeAmt = lkm_file_write( file,"VM_HUGEPAGE | ", strlen("VM_HUGEPAGE | "), p_offset );
+	if( flags & VM_NOHUGEPAGE )
+		writeAmt = lkm_file_write( file,"VM_NOHUGEPAGE | ", strlen("VM_NOHUGEPAGE | "), p_offset );
+	if( flags & VM_MERGEABLE )
+		writeAmt = lkm_file_write( file,"VM_MERGEABLE | ", strlen("VM_MERGEABLE | "), p_offset );
+
+	return 0;
+
 }
