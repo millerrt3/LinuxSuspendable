@@ -163,6 +163,12 @@ int      lkm_file_write( LKM_FILE file, char *buffer, int size, unsigned long lo
 	mm_segment_t oldfs;
     int ret = 0;
 
+    if( buffer == 0 || p_offset == 0 || file == 0 )
+    {
+    	printk( KERN_WARNING "lkm_file_write->invalid argument; buf=0x%08x, p_offset=0x%08x, file=0x%08x\n", buffer, p_offset, file );
+    	return INVALID_ARG;
+    }
+
     oldfs = get_fs();
     set_fs(get_ds());
 
@@ -217,6 +223,12 @@ int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size, unsigned l
     int bytes_remain = size;
     int bytes_written = 0;
     int bytes_to_convert = 0;
+
+    if( buffer == 0 || p_offset == 0 || file == 0 )
+    {
+    	printk( KERN_WARNING "lkm_file_ascii_write->invalid argument; buf=0x%08x, p_offset=0x%08x, file=0x%08x\n", buffer, p_offset, file );
+    	return INVALID_ARG;
+    }
 
     oldfs = get_fs();
     set_fs(get_ds());
