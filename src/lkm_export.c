@@ -884,8 +884,15 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 
 int lkm_export_vma_page_callback(struct task_struct* task_ptr, unsigned long page_virtual_address, unsigned long physical_address, unsigned int page_size )
 {
+
+	// char *ptr = (char*)physical_address;
     
-    printk( KERN_DEBUG "pid=%d, virtual=%lu, physical=%lu, page_size=%d\n", task_ptr->pid, page_virtual_address, physical_address, page_size )
+    printk( KERN_DEBUG "pid=%d, virtual=%lu, physical=%lu, page_size=%d\n", task_ptr->pid, page_virtual_address, physical_address, page_size );
+
+    // printk( KERN_DEBUG "0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", 
+    // 					ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7], ptr[8], ptr[9] );
+
+
     return 0;
 }
 
@@ -908,7 +915,7 @@ int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigne
 		printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export the active_mm struct\n" );
     
     // export processes virtual memory areas (uncached)
-    if( lkm_for_each_vma_in_task( task_ptr, &lkm_export_vma_page_callback ) != 0 )
+    if( lkm_for_each_vma_page_in_task( task_ptr, &lkm_export_vma_page_callback ) != 0 )
         printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export all the vma structures\n" );
 
 	// export the vmacache structures
@@ -1613,7 +1620,7 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 	writeAmt = lkm_file_write( file,"\n\tvm_end: ", strlen("\n\tvm_end: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_end), sizeof(unsigned long), p_offset );
 
-	vm_size = vm_end - vm_start;
+	vm_size = ptr->vm_end - ptr->vm_start;
 	writeAmt = lkm_file_write( file,"\n\tvm_size: ", strlen("\n\tvm_size: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(vm_size), sizeof(unsigned long), p_offset );
 

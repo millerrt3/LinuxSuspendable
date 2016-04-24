@@ -69,16 +69,9 @@ struct task_struct* lkm_get_task_struct( int pid );
  * @param[in] virtual_address Virtual address that should be converted to the physical
  * @return Physical address
  */
-unsigned long lkm_virtual_to_physical( mm_context_t *ptr, unsigned long virtual_address );
+unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtual_address );
 
-/**
- * @brief Shortcut for processing each Virtual Memory Area (VMA) within a given task
- *
- * @note
- *  This function assumes that calling process acquires the rcu read lock for the 
- *  specified task_struct.
- */
-int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler ); 
+int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback handler ); 
 
 /**
  * @brief Writes binary data into a file

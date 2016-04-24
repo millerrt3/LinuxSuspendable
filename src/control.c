@@ -66,14 +66,14 @@ void print_help()
 	printf( "running process.                                        \n" );
 	printf( "\n");
 	printf( "SYNOPSIS:\n");
-	printf( "\tcontrol [options] [targets]\n" );
+	printf( "\ttskdmp [options] [targets]\n" );
 	printf( "\n");
 	printf( "OPTIONS:\n" );
 	printf( "\t-c, Number of sequential times that the target processes\n" );
 	printf( "\t    data should be exported. Default is 1.\n");
 	printf( "\n");
 	printf( "\t-p, PID of the process that should be targeted for export.\n");
-	printf( "\t    The default action is to profile the \"control\" process.\n");
+	printf( "\t    The default action is to profile the \"tskdmp\" process.\n");
 	printf( "\n");
 	printf( "\t-d, Number of seconds between each call to module for an\n");
 	printf( "\t    export to take place. Default is 1 second.");
@@ -81,6 +81,8 @@ void print_help()
 	printf( "TARGETS:\n" );
 	printf( "\t--task, A high level export of the processes task_struct will\n");
 	printf( "\t    be performed. Enabled by default.\n");
+    printf( "\t--mem,  A detailed export of the processes memory will\n");
+	printf( "\t    be performed.\n");
 	printf( "\n");
 	printf( "AUTHORS:\n" );
 	printf( "\tCameron Whipple, Robert Miller\n" );

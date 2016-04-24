@@ -10,7 +10,7 @@
 #include "lkm_utils.h"
 
 // Derived from 'getconf PAGESIZE' on raspberry pi
-#define PAGE_SIZE (4096)
+// #define PAGE_SIZE (4096)
 
 struct task_struct* lkm_get_task_struct( int pid )
 {
@@ -42,19 +42,42 @@ struct task_struct* lkm_get_task_struct( int pid )
     
 }
 
-unsigned long lkm_virtual_to_physical( mm_context_t *ptr, unsigned long virtual_address )
+unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtual_address )
 {
     
-    if( ptr == 0 )
+    pgd_t *pgd = 0;
+    pud_t *pud = 0;
+    pmd_t *pmd = 0;
+    pte_t *pte = 0;
+    struct page *page = 0;
+    unsigned long phys = 0;
+    
+    if( mm == 0 )
     {
         printk( KERN_WARNING "lkm_virtual_to_physical->invalid memory map pointer\n" );
         return INVALID_ARG;
     }
     
-    return virt2phys( ptr, virtual_address );    
+    pgd = pgd_offset(mm, virtual_address);
+    if (pgd_none(*pgd) || pgd_bad(*pgd))
+        return 0;
+    pud = pud_offset(pgd, virtual_address);
+    if (pud_none(*pud) || pud_bad(*pud))
+        return 0;
+    pmd = pmd_offset(pud, virtual_address);
+    if (pmd_none(*pmd) || pmd_bad(*pmd))
+        return 0;
+    if (!(pte = pte_offset_map(pmd, virtual_address)))
+        return 0;
+    if (!(page = pte_page(*pte)))
+        return 0;
+    phys = page_to_phys(page);
+    pte_unmap(pte);
+    
+    return phys; 
 }
 
-int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler )
+int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback handler )
 {
     
     struct vm_area_struct *vma = 0;
@@ -66,7 +89,7 @@ int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler 
     // process arguments
     if( task_ptr == 0 || handler == 0 )
     {
-        printk( KERN_WARNING "lkm_for_each_vma_in_task->Invalid Argument; task=0x%08x, handler=0x%08x\n", task_ptr, handler );
+        printk( KERN_WARNING "lkm_for_each_vma_page_in_task->Invalid Argument; task=0x%08x, handler=0x%08x\n", (unsigned int)task_ptr, (unsigned int)handler );
         return INVALID_ARG;
     }
     
@@ -74,13 +97,13 @@ int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler 
     {
         
         // for each vma region in the process
-        for (vma = task->mm->mmap; vma; vma = vma->vm_next)
+        for (vma = task_ptr->mm->mmap; vma; vma = vma->vm_next)
         {
             
             // for each page in the memory region
             for (vpage = vma->vm_start; vpage < vma->vm_end; vpage += PAGE_SIZE)
             {
-                phys = virt2phys(task->mm, vpage);
+                phys = lkm_virtual_to_physical(task_ptr->mm, vpage);
                 if( phys < 0 )
                 {
                     printk( KERN_WARNING "lkm_for_each_vma_in_task->Physical Address Not Found\n" );
@@ -229,7 +252,7 @@ int lkm_file_write( LKM_FILE file, char *buffer, int size, unsigned long long *p
 
     if( buffer == 0 || p_offset == 0 || file == 0 )
     {
-    	printk( KERN_WARNING "lkm_file_write->invalid argument; buf=0x%08x, p_offset=0x%08x, file=0x%08x\n", buffer, p_offset, file );
+    	printk( KERN_WARNING "lkm_file_write->invalid argument; buf=0x%08x, p_offset=0x%08x, file=0x%08x\n", (unsigned int)buffer, (unsigned int)p_offset, (unsigned int)file );
     	return INVALID_ARG;
     }
 
@@ -290,7 +313,7 @@ int      lkm_file_ascii_write( LKM_FILE file, char *buffer, int size, unsigned l
 
     if( buffer == 0 || p_offset == 0 || file == 0 )
     {
-    	printk( KERN_WARNING "lkm_file_ascii_write->invalid argument; buf=0x%08x, p_offset=0x%08x, file=0x%08x\n", buffer, p_offset, file );
+    	printk( KERN_WARNING "lkm_file_ascii_write->invalid argument; buf=0x%08x, p_offset=0x%08x, file=0x%08x\n", (unsigned int)buffer, (unsigned int)p_offset, (unsigned int)file );
     	return INVALID_ARG;
     }
 
