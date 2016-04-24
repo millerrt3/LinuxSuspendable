@@ -77,6 +77,40 @@ unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtu
     return phys; 
 }
 
+int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler )
+{
+    struct vm_area_struct *vma = 0;
+    int sv = 0;
+    int rv = 0;
+    
+    // process arguments
+    if( task_ptr == 0 || handler == 0 )
+    {
+        printk( KERN_WARNING "lkm_for_each_vma_page_in_task->Invalid Argument; task=0x%08x, handler=0x%08x\n", (unsigned int)task_ptr, (unsigned int)handler );
+        return INVALID_ARG;
+    }
+    
+    if (task_ptr->mm && task_ptr->mm->mmap)
+    {
+        
+        // for each vma region in the process
+        for (vma = task_ptr->mm->mmap; vma; vma = vma->vm_next)
+        {
+            
+            // call the provided handler for each of the vma pages and regions
+            sv = (*handler)( task_ptr, vma->vm_start, vma->vm_end, PAGE_SIZE );
+            if( sv < 0 )
+            {
+                printk( KERN_WARNING "lkm_for_each_vma_in_task->handler returned error; error_code=0x%08x\n", sv );
+                rv = sv;
+            }
+            
+        }
+    }
+    
+    return rv;
+}
+
 int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback handler )
 {
     
@@ -106,7 +140,7 @@ int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback han
                 phys = lkm_virtual_to_physical(task_ptr->mm, vpage);
                 if( phys < 0 )
                 {
-                    printk( KERN_WARNING "lkm_for_each_vma_in_task->Physical Address Not Found\n" );
+                    printk( KERN_WARNING "lkm_for_each_vma_page_in_task->Physical Address Not Found\n" );
                     continue;
                 }
                 
@@ -114,7 +148,7 @@ int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback han
                 sv = (*handler)( task_ptr, vpage, phys, PAGE_SIZE );
                 if( sv < 0 )
                 {
-                    printk( KERN_WARNING "lkm_for_each_vma_in_task->handler returned error; error_code=0x%08x\n", sv );
+                    printk( KERN_WARNING "lkm_for_each_vma_page_in_task->handler returned error; error_code=0x%08x\n", sv );
                     rv = sv;
                 }
             }

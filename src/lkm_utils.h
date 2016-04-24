@@ -40,7 +40,8 @@ typedef enum
  */
 typedef struct file* LKM_FILE;
 
-typedef int (*vmaCallback)(struct task_struct* task_ptr, unsigned long page_virtual_address, unsigned long physical_address, unsigned int page_size );
+typedef int (*vmaCallback)(struct task_struct* task_ptr, unsigned long vm_start, unsigned long vm_end, unsigned int page_size );
+typedef int (*vmaPageCallback)(struct task_struct* task_ptr, unsigned long page_virtual_address, unsigned long physical_address, unsigned int page_size );
 
 // *************************************************************************
 //                          FUNCTION PROTOTYPES
@@ -71,7 +72,9 @@ struct task_struct* lkm_get_task_struct( int pid );
  */
 unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtual_address );
 
-int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback handler ); 
+int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler ); 
+
+int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaPageCallback handler ); 
 
 /**
  * @brief Writes binary data into a file

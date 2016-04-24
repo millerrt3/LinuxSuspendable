@@ -882,16 +882,32 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	return 0;
 }
 
-int lkm_export_vma_page_callback(struct task_struct* task_ptr, unsigned long page_virtual_address, unsigned long physical_address, unsigned int page_size )
+int lkm_export_vma_page_callback(struct task_struct* task_ptr, unsigned long vm_start, unsigned long vm_end, unsigned int page_size )
 {
-
-	// char *ptr = (char*)physical_address;
     
-    printk( KERN_DEBUG "pid=%d, virtual=%lu, physical=%lu, page_size=%d\n", task_ptr->pid, page_virtual_address, physical_address, page_size );
-
-    // printk( KERN_DEBUG "0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n", 
-    // 					ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7], ptr[8], ptr[9] );
-
+    // NOTE: All file writes should start with \n\t\t
+    
+    unsigned long vpage = 0;
+    unsigned long phys = 0;
+    
+    printk( KERN_DEBUG "pid=%d, vm_start=%lu, vm_end=%lu, page_size=%d\n", task_ptr->pid, vm_start, vm_end, page_size );
+    
+    // for each 4096 byte page in this vma region
+    for (vpage = vm_start; vpage < vm_end; vpage += page_size)
+    {
+        
+        // convert from virtual to physical addressing
+        phys = lkm_virtual_to_physical(task_ptr->mm, vpage);
+        if( phys < 0 )
+        {
+            printk( KERN_WARNING "lkm_for_each_vma_in_task->Physical Address Not Found\n" );
+            continue;
+        }
+        
+        printk( KERN_DEBUG "\tpid=%d, vm_start=%lu, vm_phys=%lu\n", task_ptr->pid, vpage, phys );
+        
+        // TODO - Add code here
+    }
 
     return 0;
 }
@@ -903,21 +919,19 @@ int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	int index = 0;
 	char buffer[100];
 
-	// export mm and active_mm attributes
+	// export mm attributes
 	writeAmt = lkm_file_write( file, "\nmm: ", strlen("\nmm: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mm), sizeof(struct mm_struct*), p_offset );
 	if( lkm_export_mm_struct( task_ptr->mm, file, p_offset ) != 0 )
 		printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export the mm struct\n" );
 
+#if 0
 	writeAmt = lkm_file_write( file, "\nactive_mm: ", strlen("\nactive_mm: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->active_mm), sizeof(struct mm_struct*), p_offset );
 	if( lkm_export_mm_struct( task_ptr->active_mm, file, p_offset ) != 0 )
 		printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export the active_mm struct\n" );
+#endif
     
-    // export processes virtual memory areas (uncached)
-    if( lkm_for_each_vma_page_in_task( task_ptr, &lkm_export_vma_page_callback ) != 0 )
-        printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export all the vma structures\n" );
-
 	// export the vmacache structures
 	for( index = 0; index < VMACACHE_SIZE; index++ )
 	{
@@ -1371,9 +1385,25 @@ int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long lo
 	long atomic_long_value = 0;
 	char buffer[100];
 	int index = 0;
+    struct vm_area_struct *vma = 0;
 
 	writeAmt = lkm_file_write( file,"\n\tmmap: ", strlen("\n\tmmap: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->mmap), sizeof(struct vm_area_struct*), p_offset );
+    
+    // iterate over every vma in this process
+    if ( ptr && ptr->mmap )
+    {
+        
+        // for each vma region in the process
+        for (vma = ptr->mmap; vma; vma = vma->vm_next)
+        {
+            
+            // export the specified vma to the file
+            if( lkm_export_vm_area_struct( vma, file, p_offset ) != 0 )
+                printk( KERN_WARNING "lkm_export_mm_struct->Failed to export vma\n" );
+            
+        }
+    }
 
 	writeAmt = lkm_file_write( file,"\n\tmm_rb: ", strlen("\n\tmm_rb: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->mm_rb), sizeof(struct rb_root*), p_offset );
@@ -1607,6 +1637,9 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 
 	int writeAmt = 0;
 	unsigned long vm_size = 0;
+    char buffer[200];
+    unsigned long vpage = 0;
+    unsigned long phys = 0;
 
 	if( p_offset == 0 )
 		return INVALID_ARG;
@@ -1614,65 +1647,75 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
 	if( ptr == 0 )
 		return 0;
 
-	writeAmt = lkm_file_write( file,"\n\tvm_start: ", strlen("\n\tvm_start: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\n\t\tvm_start: ", strlen("\n\t\tvm_start: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_start), sizeof(unsigned long), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_end: ", strlen("\n\tvm_end: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_end: ", strlen("\n\t\tvm_end: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_end), sizeof(unsigned long), p_offset );
 
 	vm_size = ptr->vm_end - ptr->vm_start;
-	writeAmt = lkm_file_write( file,"\n\tvm_size: ", strlen("\n\tvm_size: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_size: ", strlen("\n\t\tvm_size: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(vm_size), sizeof(unsigned long), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_next: ", strlen("\n\tvm_next: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_next: ", strlen("\n\t\tvm_next: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_next), sizeof(struct vm_area_struct*), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_prev: ", strlen("\n\tvm_prev: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_prev: ", strlen("\n\t\tvm_prev: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_prev), sizeof(struct vm_area_struct*), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_rb: ", strlen("\n\tvm_rb: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_rb: ", strlen("\n\t\tvm_rb: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_rb), sizeof(struct rb_node), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\trb_subtree_gap: ", strlen("\n\trb_subtree_gap: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\trb_subtree_gap: ", strlen("\n\t\trb_subtree_gap: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->rb_subtree_gap), sizeof(unsigned long), p_offset );
 
-	/* TODO - consider actually going through exporting the contents in this structure */
-	writeAmt = lkm_file_write( file,"\n\tvm_mm: ", strlen("\n\tvm_mm: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_mm: ", strlen("\n\t\tvm_mm: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_mm), sizeof(struct mm_struct*), p_offset );
 
 	/* TODO - find the flags values for the protection (Access Permissions) */
-	writeAmt = lkm_file_write( file,"\n\tvm_page_prot: ", strlen("\n\tvm_page_prot: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_page_prot: ", strlen("\n\t\tvm_page_prot: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_page_prot), sizeof(pgprot_t), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_flags: ", strlen("\n\tvm_flags: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_flags: ", strlen("\n\t\tvm_flags: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_flags), sizeof(unsigned long), p_offset );
 	if( lkm_export_vm_flags( ptr->vm_flags, file, p_offset) != 0 )
 		printk( KERN_WARNING "lkm_export_vm_area_struct->Exporting vm_flags\n" );
 
-	writeAmt = lkm_file_write( file,"\n\tanon_vma_chain: ", strlen("\n\tanon_vma_chain: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tanon_vma_chain: ", strlen("\n\t\tanon_vma_chain: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->anon_vma_chain), sizeof(struct list_head), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tanon_vma: ", strlen("\n\tanon_vma: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tanon_vma: ", strlen("\n\t\tanon_vma: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->anon_vma), sizeof(struct anon_vma*), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_ops: ", strlen("\n\tvm_ops: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_ops: ", strlen("\n\t\tvm_ops: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_ops), sizeof(struct vm_operations_struct*), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_pgoff: ", strlen("\n\tvm_pgoff: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_pgoff: ", strlen("\n\t\tvm_pgoff: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_pgoff), sizeof(unsigned long), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_file: ", strlen("\n\tvm_file: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_file: ", strlen("\n\t\tvm_file: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_file), sizeof(struct file*), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\tvm_private_data: ", strlen("\n\tvm_private_data: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\tvm_private_data: ", strlen("\n\t\tvm_private_data: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_private_data), sizeof(void*), p_offset );
 
-#if 0
-#ifdef CONFIG_MMU
-	writeAmt = lkm_file_write( file,"\n\tvm_region: ", strlen("\n\tvm_region: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vm_region), sizeof(struct vm_region*), p_offset );
-#endif
-#endif
+    // for each page in the memory region
+    writeAmt = lkm_file_write( file,"\n\t\tpages: ", strlen("\n\t\tpages: "), p_offset );
+    for (vpage = ptr->vm_start; vpage < ptr->vm_end; vpage += PAGE_SIZE)
+    {
+        phys = lkm_virtual_to_physical(ptr->vm_mm, vpage);
+        if( phys < 0 )
+        {
+            printk( KERN_WARNING "lkm_for_each_vma_page_in_task->Physical Address Not Found\n" );
+            continue;
+        }
+        
+        memset( buffer, 0, 200 );
+        sprintf( buffer, "\n\t\t\tvpage_addr=%lu, phys_addr=%lu, pg_size=%lu", vpage, phys, PAGE_SIZE );
+        
+        writeAmt = lkm_file_write( file,buffer, strlen(buffer), p_offset );
+        
+    }
 
 	return 0;
 
@@ -1686,21 +1729,21 @@ int lkm_export_mm_context( mm_context_t *ptr, LKM_FILE file, unsigned long long 
 
 #ifdef CONFIG_CPU_HAS_ASID
 	atomic_long_value = atomic_read( &(ptr->id) );
-	writeAmt = lkm_file_write( file,"\n\t\tid: ", strlen("\n\t\tid: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\t\tid: ", strlen("\n\t\t\tid: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(atomic_long_value), sizeof(u64), p_offset );
 #else
-	writeAmt = lkm_file_write( file,"\n\t\tswitch_pending: ", strlen("\n\t\tswitch_pending: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\t\tswitch_pending: ", strlen("\n\t\t\tswitch_pending: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->switch_pending), sizeof(int), p_offset );
 #endif
 
-	writeAmt = lkm_file_write( file,"\n\t\tvmalloc_seq: ", strlen("\n\t\tvmalloc_seq: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\t\tvmalloc_seq: ", strlen("\n\t\t\tvmalloc_seq: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vmalloc_seq), sizeof(unsigned int), p_offset );
 
-	writeAmt = lkm_file_write( file,"\n\t\tsigpage: ", strlen("\n\t\tsigpage: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\t\tsigpage: ", strlen("\n\t\t\tsigpage: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->sigpage), sizeof(unsigned long), p_offset );
 
 #ifdef CONFIG_VDSO
-	writeAmt = lkm_file_write( file,"\n\t\tvdso: ", strlen("\n\t\tvdso: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\t\t\tvdso: ", strlen("\n\t\t\tvdso: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(ptr->vdso), sizeof(unsigned long), p_offset );
 #endif
 
@@ -1712,7 +1755,7 @@ int lkm_export_vm_flags( unsigned long flags, LKM_FILE file, unsigned long long 
 	int writeAmt = 0;
 
 	if( flags != VM_NONE )
-		writeAmt = lkm_file_write( file,"\n\t\tflags: ", strlen("\n\t\tflags: "), p_offset );
+		writeAmt = lkm_file_write( file,"\n\t\t\tflags: ", strlen("\n\t\t\tflags: "), p_offset );
 
 	if( flags & VM_READ )
 		writeAmt = lkm_file_write( file,"VM_READ | ", strlen("VM_READ | "), p_offset );
