@@ -4,9 +4,13 @@
 #include <linux/buffer_head.h>
 #include <linux/pid.h>
 #include <linux/sched.h>  // tasklist_lock
+#include <linux/memory.h> // virt_to_phys
 
 #include "types.h"
 #include "lkm_utils.h"
+
+// Derived from 'getconf PAGESIZE' on raspberry pi
+#define PAGE_SIZE (4096)
 
 struct task_struct* lkm_get_task_struct( int pid )
 {
@@ -35,6 +39,66 @@ struct task_struct* lkm_get_task_struct( int pid )
     
     // return
     return pid_task_ptr;
+    
+}
+
+unsigned long lkm_virtual_to_physical( mm_context_t *ptr, unsigned long virtual_address )
+{
+    
+    if( ptr == 0 )
+    {
+        printk( KERN_WARNING "lkm_virtual_to_physical->invalid memory map pointer\n" );
+        return INVALID_ARG;
+    }
+    
+    return virt2phys( ptr, virtual_address );    
+}
+
+int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler )
+{
+    
+    struct vm_area_struct *vma = 0;
+    unsigned long vpage = 0;
+    unsigned long phys = 0;
+    int sv = 0;
+    int rv = 0;
+    
+    // process arguments
+    if( task_ptr == 0 || handler == 0 )
+    {
+        printk( KERN_WARNING "lkm_for_each_vma_in_task->Invalid Argument; task=0x%08x, handler=0x%08x\n", task_ptr, handler );
+        return INVALID_ARG;
+    }
+    
+    if (task_ptr->mm && task_ptr->mm->mmap)
+    {
+        
+        // for each vma region in the process
+        for (vma = task->mm->mmap; vma; vma = vma->vm_next)
+        {
+            
+            // for each page in the memory region
+            for (vpage = vma->vm_start; vpage < vma->vm_end; vpage += PAGE_SIZE)
+            {
+                phys = virt2phys(task->mm, vpage);
+                if( phys < 0 )
+                {
+                    printk( KERN_WARNING "lkm_for_each_vma_in_task->Physical Address Not Found\n" );
+                    continue;
+                }
+                
+                // call the provided handler for each of the vma pages and regions
+                sv = (*handler)( task_ptr, vpage, phys, PAGE_SIZE );
+                if( sv < 0 )
+                {
+                    printk( KERN_WARNING "lkm_for_each_vma_in_task->handler returned error; error_code=0x%08x\n", sv );
+                    rv = sv;
+                }
+            }
+        }
+    }
+    
+    return rv;
     
 }
 
@@ -158,7 +222,7 @@ LKM_FILE lkm_file_open( const char *pathname, LKM_FilePermission permission )
 }
 
 
-int      lkm_file_write( LKM_FILE file, char *buffer, int size, unsigned long long *p_offset )
+int lkm_file_write( LKM_FILE file, char *buffer, int size, unsigned long long *p_offset )
 {
 	mm_segment_t oldfs;
     int ret = 0;
