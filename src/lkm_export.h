@@ -27,14 +27,28 @@
 #include <linux/pid.h>
 #include <linux/slab.h>
 
+
+// *************************************************************************
+//                           Function Prototypes
+// *************************************************************************
+
+// export functions called from the lkm_inspect.c file
+int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+
+// helper export functions that are always available in kernel
+int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_mm_struct( struct mm_struct *ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_sigpending( struct sigpending signal, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_sigset_t( sigset_t set, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_mm_context( mm_context_t *ptr, LKM_FILE file, unsigned long long *p_offset );
+int lkm_export_vm_flags( unsigned long flags, LKM_FILE file, unsigned long long *p_offset );
+
 #ifdef CONFIG_CPUSETS
 int lkm_export_cpusets( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 #endif
-
-int lkm_export_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
-int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
-int lkm_export_sigpending( struct sigpending signal, LKM_FILE file, unsigned long long *p_offset );
-int lkm_export_sigset_t( sigset_t set, LKM_FILE file, unsigned long long *p_offset );
 
 #ifdef CONFIG_CGROUPS
 int lkm_export_cgroups( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
@@ -59,8 +73,6 @@ int lkm_export_tracing( struct task_struct *task_ptr, LKM_FILE file, unsigned lo
 #ifdef CONFIG_TASK_XACCT
 int lkm_export_task_xacct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 #endif
-
-int lkm_export_vm_state( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );
 
 #ifdef CONFIG_TRACE_IRQFLAGS
 int lkm_export_trace_irqflags( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset );

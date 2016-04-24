@@ -19,6 +19,8 @@
 #include "types.h" // Status
 
 #include <linux/sched.h>
+#include <linux/mm.h>
+
 
 /**
  * @brief Acceptable operations for opening a file in kernel space
@@ -37,6 +39,8 @@ typedef enum
  * @brief Represents an open file to the routines in this file
  */
 typedef struct file* LKM_FILE;
+
+typedef int (*vmaCallback)(struct task_struct* task_ptr, unsigned long page_virtual_address, unsigned long physical_address, unsigned int page_size );
 
 // *************************************************************************
 //                          FUNCTION PROTOTYPES
@@ -58,6 +62,16 @@ typedef struct file* LKM_FILE;
  * @return Pointer to the task_struct, NULL if an invalid PID is provided.
  */
 struct task_struct* lkm_get_task_struct( int pid );
+
+/**
+ * @brief Converts a virtual address to the physical address within the linux kernel
+ *
+ * @param[in] virtual_address Virtual address that should be converted to the physical
+ * @return Physical address
+ */
+unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtual_address );
+
+int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaCallback handler ); 
 
 /**
  * @brief Writes binary data into a file
