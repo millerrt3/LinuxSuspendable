@@ -14,6 +14,9 @@
 #include <linux/atomic.h>
 #include <linux/signal.h>
 #include <linux/mm.h>
+#include <linux/mount.h>
+#include <linux/fs_struct.h>
+#include <linux/fdtable.h>
 
 static void lkm_export_print_flags( unsigned int flags, LKM_FILE file, unsigned long long *p_offset  )
 {
@@ -167,6 +170,271 @@ static void lkm_export_task_io_accounting( struct task_io_accounting tioa, LKM_F
 #endif
 }
 
+static void lkm_export_path_struct( struct path p, LKM_FILE file, unsigned long long *p_offset  )
+{
+	int writeAmt = 0;
+
+	/*
+	 * mnt
+	 */
+	writeAmt = lkm_file_write( file,"\n\t\tmnt: ", strlen("\n\troot: "), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\tmnt_root: ", strlen("\n\t\t\tmnt_root: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.mnt->mnt_root), sizeof(struct dentry*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\tmnt_sb: ", strlen("\n\t\t\tmnt_sb: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.mnt->mnt_sb), sizeof(struct super_block*), p_offset );
+
+	// TODO try to interpret these flags
+	writeAmt = lkm_file_write( file,"\n\t\t\tmnt_flags: ", strlen("\n\t\t\tmnt_flags: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.mnt->mnt_flags), sizeof(int), p_offset );
+
+	/*
+	 * dentry
+	 */
+	writeAmt = lkm_file_write( file,"\n\t\tdentry: ", strlen("\n\tdentry: "), p_offset );
+
+	// TODO try to interpret these flags
+	writeAmt = lkm_file_write( file,"\n\t\t\td_flags: ", strlen("\n\t\t\td_flags: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_flags), sizeof(unsigned int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_seq: ", strlen("\n\t\t\td_seq: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_seq), sizeof(seqcount_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_hash: ", strlen("\n\t\t\td_hash: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_hash), sizeof(struct hlist_bl_node), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_parent: ", strlen("\n\t\t\td_parent: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_parent), sizeof(struct dentry*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_name: ", strlen("\n\t\t\td_name: "), p_offset );
+#ifdef __LITTLE_ENDIAN
+	writeAmt = lkm_file_write( file,"\n\t\t\t\thash: ", strlen("\n\t\t\t\thash: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_name.hash), sizeof(u32), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\t\tlen: ", strlen("\n\t\t\t\tlen: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_name.len), sizeof(u32), p_offset );
+#else
+	writeAmt = lkm_file_write( file,"\n\t\t\t\tlen: ", strlen("\n\t\t\t\tlen: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_name.len), sizeof(u32), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\t\thash: ", strlen("\n\t\t\t\thash: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_name.hash), sizeof(u32), p_offset );
+#endif
+	writeAmt = lkm_file_write( file,"\n\t\t\t\tname: ", strlen("\n\t\t\t\tname: "), p_offset );
+	writeAmt = lkm_file_write( file, (char*)p.dentry->d_name.name, strlen(p.dentry->d_name.name), p_offset );
+
+	// TODO This is a big struct that could also be expanded, but it doesn't seem to be critical
+	// http://lxr.free-electrons.com/source/include/linux/fs.h?v=4.1#L582
+	writeAmt = lkm_file_write( file,"\n\t\t\td_inode: ", strlen("\n\t\t\td_inode: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_inode), sizeof(struct inode*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\t\td_iname: ", strlen("\n\t\t\t\td_iname: "), p_offset );
+	writeAmt = lkm_file_write( file, p.dentry->d_iname, strlen(p.dentry->d_iname), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_lockref: ", strlen("\n\t\t\td_lockref: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_lockref), sizeof(struct lockref), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_op: ", strlen("\n\t\t\td_op: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_op), sizeof(struct dentry_operations*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_sb: ", strlen("\n\t\t\td_sb: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_sb), sizeof(struct super_block*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_time: ", strlen("\n\t\t\td_time: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_time), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_fsdata: ", strlen("\n\t\t\td_fsdata: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_fsdata), sizeof(void*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_lru: ", strlen("\n\t\t\td_lru: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_lru), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_child: ", strlen("\n\t\t\td_child: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_child), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_subdirs: ", strlen("\n\t\t\td_subdirs: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_subdirs), sizeof(struct list_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\td_u: ", strlen("\n\t\t\td_u: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(p.dentry->d_u), sizeof(struct rcu_head), p_offset );
+}
+
+static void lkm_export_fs_struct( struct fs_struct fs, LKM_FILE file, unsigned long long *p_offset  )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\n\tusers: ", strlen("\n\tusers: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(fs.users), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tlock: ", strlen("\n\tlock: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(fs.lock), sizeof(spinlock_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tseq: ", strlen("\n\tseq: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(fs.seq), sizeof(seqcount_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tumask: ", strlen("\n\tumask: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(fs.umask), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tin_exec: ", strlen("\n\tin_exec: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(fs.in_exec), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\troot: ", strlen("\n\troot: "), p_offset );
+	lkm_export_path_struct(fs.root, file, p_offset);
+
+	writeAmt = lkm_file_write( file,"\n\tpwd: ", strlen("\n\tpwd: "), p_offset );
+	lkm_export_path_struct(fs.pwd, file, p_offset);
+}
+
+static void lkm_export_file( struct file f, LKM_FILE file, unsigned long long *p_offset )
+{
+	int writeAmt = 0;
+
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_u: ", strlen("\n\t\tf_u: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_u), sizeof(struct rcu_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_path: ", strlen("\n\t\tf_path: "), p_offset );
+	lkm_export_path_struct(f.f_path, file, p_offset);
+
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_inode: ", strlen("\n\t\tf_inode: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_inode), sizeof(struct inode*), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_op: ", strlen("\n\t\tf_op: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_op), sizeof(struct file_operations*), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_lock: ", strlen("\n\t\tf_lock: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_lock), sizeof(spinlock_t), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_count: ", strlen("\n\t\tf_count: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_count), sizeof(atomic_long_t), p_offset );
+	
+	// TODO possibly interpret these flags?
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_flags: ", strlen("\n\t\tf_flags: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_flags), sizeof(unsigned int), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_mode: ", strlen("\n\t\tf_mode: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_mode), sizeof(fmode_t), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_pos_lock: ", strlen("\n\t\tf_pos_lock: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_pos_lock), sizeof(struct mutex), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_pos: ", strlen("\n\t\tf_pos: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_pos), sizeof(loff_t), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_owner: ", strlen("\n\t\tf_owner: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_owner), sizeof(struct fown_struct), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_cred: ", strlen("\n\t\tf_cred: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_cred), sizeof(struct cred*), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_ra: ", strlen("\n\t\tf_ra: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_ra), sizeof(struct file_ra_state), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_version: ", strlen("\n\t\tf_version: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_version), sizeof(u64), p_offset );
+
+#ifdef CONFIG_SECURITY
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_security: ", strlen("\n\t\tf_security: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_security), sizeof(void*), p_offset );
+#endif
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tprivate_data: ", strlen("\n\t\tprivate_data: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.private_data), sizeof(void*), p_offset );
+
+#ifdef CONFIG_EPOLL
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_ep_links: ", strlen("\n\t\tf_ep_links: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_ep_links), sizeof(struct list_head), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\t\t\tf_tfile_llink: ", strlen("\n\t\tf_tfile_llink: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(f.f_tfile_llink), sizeof(struct list_head), p_offset );
+#endif
+}
+
+static void lkm_export_files_struct( struct files_struct files, LKM_FILE file, unsigned long long *p_offset  )
+{
+	int writeAmt = 0;
+	char buffer[100];
+	unsigned int i;
+
+	writeAmt = lkm_file_write( file,"\n\tcount: ", strlen("\n\tcount: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.count), sizeof(atomic_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tfdt: ", strlen("\n\tfdt: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.fdt), sizeof(struct fdtable*), p_offset );
+	
+	writeAmt = lkm_file_write( file,"\n\tfdtab: ", strlen("\n\tfdtab: "), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\tmax_fds: ", strlen("\n\t\tmax_fds: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.fdtab.max_fds), sizeof(unsigned int), p_offset );
+
+	for (i = 0; i < files.fdtab.max_fds; ++i)
+	{
+		if (files.fdtab.fd[i] == NULL)
+			break;
+		sprintf( buffer, "\n\t\tfd[%d]: ", i );
+		writeAmt = lkm_file_write( file, buffer, strlen(buffer), p_offset );
+		lkm_export_file(*files.fdtab.fd[i], file, p_offset);
+	}
+
+	writeAmt = lkm_file_write( file,"\n\t\tclose_on_exec: ", strlen("\n\t\tclose_on_exec: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.fdtab.close_on_exec), sizeof(unsigned long*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\topen_fds: ", strlen("\n\t\topen_fds: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.fdtab.open_fds), sizeof(unsigned long*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\t\trcu: ", strlen("\n\t\trcu: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.fdtab.rcu), sizeof(struct rcu_head), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tfile_lock: ", strlen("\n\tfile_lock: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.file_lock), sizeof(spinlock_t), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tnext_fd: ", strlen("\n\tnext_fd: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.next_fd), sizeof(int), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\tclose_on_exec_init: ", strlen("\n\tclose_on_exec_init: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.close_on_exec_init), sizeof(unsigned long*), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\topen_fds_init: ", strlen("\n\topen_fds_init: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(files.open_fds_init), sizeof(int), p_offset );
+
+	for (i = 0; i < NR_OPEN_DEFAULT; ++i)
+	{
+		if (files.fd_array[i] == NULL)
+			break;
+		sprintf( buffer, "\n\tfd_array[%d]: ", i );
+		writeAmt = lkm_file_write( file, buffer, strlen(buffer), p_offset );
+		lkm_export_file(*files.fd_array[i], file, p_offset);
+	}
+}
+
+static void lkm_export_thread_struct( struct thread_struct thread, LKM_FILE file, unsigned long long *p_offset  )
+{
+	int writeAmt = 0;
+	char buffer[100];
+	int i;
+
+	writeAmt = lkm_file_write( file,"\n\taddress: ", strlen("\n\t: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.address), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\ttrap_no: ", strlen("\n\ttrap_no: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.trap_no), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\terror_code: ", strlen("\n\terror_code: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.error_code), sizeof(unsigned long), p_offset );
+
+#ifdef CONFIG_HAVE_HW_BREAKPOINT
+	writeAmt = lkm_file_write( file,"\n\tdebug: ", strlen("\n\tdebug: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.debug), sizeof(unsigned long), p_offset );
+
+	for (i = 0; i < ARM_MAX_HBP_SLOTS; ++i)
+	{
+		sprintf( buffer, "\n\t\thbp[%d]: ", i );
+		writeAmt = lkm_file_write( file,buffer, strlen(buffer), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(thread.debug.hbp[i]), sizeof(struct perf_event*), p_offset );
+	}
+#endif
+}
+
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
 {
 	int writeAmt = 0;
@@ -271,19 +539,26 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_nesting: ", strlen("\nrcu_read_lock_nesting: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_nesting), sizeof(int), p_offset );
 
-	// TODO - Need to finish the PREEMPT RCU section
-#if 0
-	writeAmt = lkm_file_write( file,"\nrcu_read_lock_unlock->blocked: ", strlen("\nrcu_read_lock_unlock->blocked: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.blocked), sizeof(bool), p_offset );
+	writeAmt = lkm_file_write( file,"\nrcu_read_unlock_special: ", strlen("\nrcu_read_unlock_special: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\tblocked: ", strlen("\n\tblocked: "), p_offset );
+	if (task_ptr->rcu_read_unlock_special.b.blocked)
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
+	else
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
+	writeAmt = lkm_file_write( file,"\n\tneed_qs: ", strlen("\n\tneed_qs: "), p_offset );
+	if (task_ptr->rcu_read_unlock_special.b.need_qs)
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
+	else
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
 
-	writeAmt = lkm_file_write( file,"\nrcu_read_lock_unlock->need_qs: ", strlen("\nrcu_read_lock_unlock->need_qs: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.need_qs), sizeof(bool), p_offset );
-#endif
+	writeAmt = lkm_file_write( file,"\nrcu_node_entry: ", strlen("\nrcu_node_entry: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_node_entry), sizeof(struct list_head), p_offset );
 
+	writeAmt = lkm_file_write( file,"\nrcu_blocked_node: ", strlen("\nrcu_blocked_node: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_blocked_node), sizeof(struct rcu_node*), p_offset );
 #endif
 
 #ifdef CONFIG_TASKS_RCU
-	// TODO -- task_ptr->rcu_blocked_node has a significant amount of stuff in it
 	writeAmt = lkm_file_write( file,"\nrcu_tasks_nvcsw: ", strlen("\nrcu_tasks_nvcsw: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_tasks_nvcsw), sizeof(unsigned long), p_offset );
 #endif
@@ -304,7 +579,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\ntasks: ", strlen("\ntasks: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->tasks), sizeof(struct list_head), p_offset );
 #ifdef CONFIG_SMP
-	// TODO - Expand structs
 	writeAmt = lkm_file_write( file,"\npushable_tasks: ", strlen("\npushable_tasks: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pushable_tasks), sizeof(struct plist_node), p_offset );
 
@@ -313,7 +587,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 #endif
 
 
-	// TODO - This is one of the big ones
 	/*
 	 * Memory
 	 */
@@ -355,7 +628,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\npdeath_signal: ", strlen("\nepdeath_signal "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pdeath_signal), sizeof(int), p_offset );
 
-	// TODO - Possibly protected by siglock (probably safe)
 	writeAmt = lkm_file_write( file,"\njobctl: ", strlen("\njobctl: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->jobctl), sizeof(unsigned int), p_offset );
 
@@ -558,13 +830,13 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 #endif
 
 	writeAmt = lkm_file_write( file,"\nthread: ", strlen("\nthread: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread), sizeof(struct thread_struct), p_offset );
+	lkm_export_thread_struct(task_ptr->thread, file, p_offset);
 
 	writeAmt = lkm_file_write( file,"\nfs: ", strlen("\nfs: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->fs), sizeof(struct fs_struct*), p_offset );
+	lkm_export_fs_struct(*(task_ptr->fs), file, p_offset);
 
 	writeAmt = lkm_file_write( file,"\nfiles: ", strlen("\nfiles: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->files), sizeof(struct files_struct*), p_offset );
+	lkm_export_files_struct(*(task_ptr->files), file, p_offset);
 
 	writeAmt = lkm_file_write( file,"\nnsproxy: ", strlen("\nnsproxy: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->nsproxy), sizeof(struct nsproxy*), p_offset );
