@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include <errno.h>
 
 
@@ -61,7 +62,6 @@ int usr_dump_process_memory( int fd, int pid, unsigned long virtual_start, int s
     int out_fd = fd;
     int bytesToRead = 0;
     int recvAmt = 0;
-    int writeAmt = 0;
     int rv = 0;
     unsigned int index = 0;
     unsigned int carry_index = 0;
@@ -72,7 +72,6 @@ int usr_dump_process_memory( int fd, int pid, unsigned long virtual_start, int s
 
     // generate filename
     snprintf( buffer, 100, "/proc/%d/mem", pid );
-    printf( "Filename: %s, virtual=%lu, size=%d\n", buffer, virtual_start, size );
 
     // open the input file
     in_fd = open( buffer, O_RDONLY );
@@ -126,17 +125,17 @@ int usr_dump_process_memory( int fd, int pid, unsigned long virtual_start, int s
             if( (carry_index % 16) == 0 && carry_index != 0 )
             {
                 // insert new line
-                writeAmt = write( out_fd, "\n", 1 );
+                write( out_fd, "\n", 1 );
             }
             else if( (carry_index % 8) == 0 && carry_index != 0 )
             {
                 // insert extra space
-                writeAmt = write( out_fd, " ", 1 );
+                write( out_fd, " ", 1 );
             }
 
             // export next byte
-            writeAmt = write( out_fd, &(ascii_page_buffer[index * 2]), 2 );
-            writeAmt = write( out_fd, " ", 1 );
+            write( out_fd, &(ascii_page_buffer[index * 2]), 2 );
+            write( out_fd, " ", 1 );
 
         }
 
@@ -146,6 +145,66 @@ int usr_dump_process_memory( int fd, int pid, unsigned long virtual_start, int s
 
     // close the file descriptor for memory
     close( in_fd );
+
+    return 0;
+
+}
+
+int usr_dump_all_memory( int fd, int pid )
+{
+
+    FILE *maps_in = 0;
+    FILE *out_file = 0;
+
+    char maps_buf[100];
+    char single_line[200];
+    char name[200];
+    int ret = 0;
+
+    unsigned int start=0, end=0, inode=0, offset=0;
+    char read, write, exe, priv, dc0, dc1, dc2, dc3;
+
+    // generate file pathways
+    snprintf( maps_buf, 100, "/proc/%d/maps", pid );
+
+    // open the map file
+    maps_in = fopen( maps_buf, "r" );
+    if( maps_in == NULL )
+    {
+        printf( "usr_dump_all_memory; ERROR Failed to open %s; %s\n", maps_buf, strerror(errno) );
+        return INVALID_PID;
+    }
+
+    out_file = fdopen( fd, "a");
+    if( out_file == NULL )
+    {
+        printf( "usr_dump_all_memory; ERROR Failed to open %s; %s\n", maps_buf, strerror(errno) );
+        ret = INVALID_PID;
+    }
+
+    if( ret == 0 )
+    {
+        while( fgets( single_line, 200, maps_in ) != 0 )
+        {
+
+            ret = sscanf( single_line, "%x-%x %c%c%c%c %x %c%c:%c%c %x %s", &start, &end, &read, &write, &exe, &priv, &offset, &dc0, &dc1, &dc2, &dc3, &inode, name );
+
+            // filter out the libraries so they aren't exported
+            if( strstr( name, "arm-linux-gnueabihf") == NULL )
+            {
+                fprintf( out_file, "\n0x%08x-0x%08x %c%c%c%c %s\n", start, end, read, write, exe, priv, name );
+                fflush( out_file );
+                usr_dump_process_memory( fd, pid, start, end - start );
+                fprintf( out_file, "\n" );
+                fflush( out_file );
+            }
+
+        }
+    }
+
+    fclose( maps_in );
+    fclose( out_file );
+
 
     return 0;
 

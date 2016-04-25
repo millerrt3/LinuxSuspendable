@@ -131,6 +131,7 @@ int main( int argc, char **args )
 			config.delay = atoi( args[++index] );
 			// printf( "delay: %d\n", config.delay );
 		}
+	#if 0
 		else if( strcmp( args[index], "-v") == 0  && (argc > index) )
 		{
 			// config.virtual_address = atoi( args[++index] );
@@ -140,6 +141,7 @@ int main( int argc, char **args )
 		{
 			config.size = strtol( args[++index], NULL, 0 );
 		}
+	#endif
 		else if( strcmp( args[index], "--task") == 0  && (argc > index) )
 		{
 			config.cmd_mask |= LKM_TASK_STRUCT;
@@ -239,20 +241,29 @@ int main( int argc, char **args )
 			printf( "ERROR: unable to write into lkm_pid; 0x%08x\n", errno );
 		}
 
-		memset( filename_buf, 0, 200);
-		snprintf( filename_buf, 200, "%s/mem_dump.txt", operation.dir_name );
-
-		out_fd = open( filename_buf, O_WRONLY | O_CREAT );
-		if( out_fd < 0 )
+		// if the user specified they wanted the memory contents
+		// dumped then we want the control application to dump
+		// everything but the gnueabi libraries.
+		if( config.cmd_mask & LKM_TASK_MEMORY )
 		{
-			printf( "ERROR: Failed to open export file\n" );
-			break;
+
+			memset( filename_buf, 0, 200);
+			snprintf( filename_buf, 200, "%s/memory_contents.txt", operation.dir_name );
+
+			// open/create the file
+			out_fd = open( filename_buf, O_WRONLY | O_CREAT );
+			if( out_fd < 0 )
+			{
+				printf( "ERROR: Failed to open export file\n" );
+				break;
+			}
+
+			// perform the operation of dumping all the memory
+			usr_dump_all_memory( out_fd, config.pid );
+
+			// close the file
+			close( out_fd );
 		}
-
-		// perform the user space aspect of the system
-		usr_dump_process_memory( out_fd, config.pid, config.virtual_address, config.size );
-
-		close( out_fd );
 
 		// delay between iterations
 		sleep( config.delay );

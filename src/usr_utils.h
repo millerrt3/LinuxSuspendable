@@ -21,5 +21,6 @@
 #include "types.h"
 
 int usr_dump_process_memory( int fd, int pid, unsigned long virtual_start, int size );
+int usr_dump_all_memory( int fd, int pid );
 
 #endif
