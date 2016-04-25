@@ -413,7 +413,7 @@ static void lkm_export_thread_struct( struct thread_struct thread, LKM_FILE file
 	char buffer[100];
 	int i;
 
-	writeAmt = lkm_file_write( file,"\n\taddress: ", strlen("\n\t: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\taddress: ", strlen("\n\taddress: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.address), sizeof(unsigned long), p_offset );
 
 	writeAmt = lkm_file_write( file,"\n\ttrap_no: ", strlen("\n\ttrap_no: "), p_offset );
