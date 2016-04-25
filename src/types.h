@@ -82,6 +82,7 @@ typedef enum
   INVALID_PID      = -2, /**< Invalid PID was provided or the PID is not currently active */
   INVALID_ARG      = -3, /**< Invalid argument provided to the function */
   SIG_INSTALL_FAIL = -4, /**< Installation of a singal handler failed */
+  FILE_NOT_FOUND   = -5, 
 } Status;
 
 #endif
