@@ -277,7 +277,31 @@ static void lkm_export_fs_struct( struct fs_struct fs, LKM_FILE file, unsigned l
 
 	writeAmt = lkm_file_write( file,"\n\tpwd: ", strlen("\n\tpwd: "), p_offset );
 	lkm_export_path_struct(fs.pwd, file, p_offset);
+}
 
+static void lkm_export_thread_struct( struct thread_struct thread, LKM_FILE file, unsigned long long *p_offset  )
+{
+	writeAmt = lkm_file_write( file,"\n\taddress: ", strlen("\n\t: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.address), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\ttrap_no: ", strlen("\n\ttrap_no: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.trap_no), sizeof(unsigned long), p_offset );
+
+	writeAmt = lkm_file_write( file,"\n\terror_code: ", strlen("\n\terror_code: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.error_code), sizeof(unsigned long), p_offset );
+
+#ifdef CONFIG_HAVE_HW_BREAKPOINT
+	writeAmt = lkm_file_write( file,"\n\tdebug: ", strlen("\n\tdebug: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(thread.debug), sizeof(unsigned long), p_offset );
+
+	char buffer[100];
+	for (int i = 0; i < ARM_MAX_HBP_SLOTS; ++i)
+	{
+		sprintf( buffer, "\n\t\thbp[%d]: ", i );
+		writeAmt = lkm_file_write( file,"\n\tbuffer: ", strlen("\n\tbuffer: "), p_offset );
+		writeAmt = lkm_file_ascii_write( file, (char*)&(thread.hbp[i]), sizeof(struct perf_event*), p_offset );
+	}
+#endif
 }
 
 int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigned long long *p_offset )
@@ -393,7 +417,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\n\tneed_qs: ", strlen("\n\tneed_qs: "), p_offset );
 	if (task_ptr->rcu_read_unlock_special.b.need_qs)
 		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
-	else
+	els
 		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
 
 	writeAmt = lkm_file_write( file,"\nrcu_node_entry: ", strlen("\nrcu_node_entry: "), p_offset );
@@ -678,7 +702,7 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 #endif
 
 	writeAmt = lkm_file_write( file,"\nthread: ", strlen("\nthread: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->thread), sizeof(struct thread_struct), p_offset );
+	lkm_export_thread_struct(task_ptr->thread, file, p_offset);
 
 	writeAmt = lkm_file_write( file,"\nfs: ", strlen("\nfs: "), p_offset );
 	lkm_export_fs_struct(task_ptr->fs, file, p_offset);
