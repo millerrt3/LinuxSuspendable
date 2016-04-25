@@ -563,7 +563,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\ntasks: ", strlen("\ntasks: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->tasks), sizeof(struct list_head), p_offset );
 #ifdef CONFIG_SMP
-	// TODO - Expand structs
 	writeAmt = lkm_file_write( file,"\npushable_tasks: ", strlen("\npushable_tasks: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pushable_tasks), sizeof(struct plist_node), p_offset );
 
@@ -572,7 +571,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 #endif
 
 
-	// TODO - This is one of the big ones
 	/*
 	 * Memory
 	 */
@@ -614,7 +612,6 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\npdeath_signal: ", strlen("\nepdeath_signal "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->pdeath_signal), sizeof(int), p_offset );
 
-	// TODO - Possibly protected by siglock (probably safe)
 	writeAmt = lkm_file_write( file,"\njobctl: ", strlen("\njobctl: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->jobctl), sizeof(unsigned int), p_offset );
 
