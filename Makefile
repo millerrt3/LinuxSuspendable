@@ -6,7 +6,8 @@ all:
 	make -C $(LINUX_BASE) SUBDIRS=$(INSPECT_BASE) modules
 
 	# Userspace control process for inspection module
-	gcc -Wall -o tskdmp $(INSPECT_BASE)/control.c
+	gcc -Wall -o tskdmp $(INSPECT_BASE)/control.c $(INSPECT_BASE)/usr_utils.c
+	gcc -Wall -o test $(INSPECT_BASE)/test.c
 	
 clean:
 	rm -f *.o

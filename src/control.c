@@ -28,6 +28,7 @@
 #include <time.h>
 
 #include "types.h"
+#include "usr_utils.h"
 
 /**
  * @brief Represents the format of an operation passed through the sysfs interface
@@ -45,6 +46,8 @@ typedef struct
 	int cmd_mask;      /**< Mask specifying which of the process elements should be exported */
 	int repeat_count;  /**< How many times should the operation be repeated */
 	int delay;         /**< Lenth of the delay in between operations */
+	unsigned int size;
+	unsigned int virtual_address;
 	
 } CTRL_Config_t;
 
@@ -99,6 +102,8 @@ int main( int argc, char **args )
 	int index = 1;
 	LKM_Operation_t operation;
 	CTRL_Config_t config;
+	char filename_buf[200];
+	int out_fd = 0;
 
 	memset( &config, 0, sizeof(CTRL_Config_t) );
 
@@ -114,17 +119,26 @@ int main( int argc, char **args )
 		if( strcmp( args[index], "-p" ) == 0 && (argc > index) )
 		{
 			config.pid = atoi( args[++index] );
-			printf( "PID: %d\n", config.pid );
+			// printf( "PID: %d\n", config.pid );
 		}
 		else if( strcmp( args[index], "-c") == 0  && (argc > index) )
 		{
 			config.repeat_count = atoi( args[++index] );
-			printf( "repeat_count: %d\n", config.repeat_count );
+			// printf( "repeat_count: %d\n", config.repeat_count );
 		}
 		else if( strcmp( args[index], "-d") == 0  && (argc > index) )
 		{
 			config.delay = atoi( args[++index] );
-			printf( "delay: %d\n", config.delay );
+			// printf( "delay: %d\n", config.delay );
+		}
+		else if( strcmp( args[index], "-v") == 0  && (argc > index) )
+		{
+			// config.virtual_address = atoi( args[++index] );
+			config.virtual_address = strtol( args[++index], NULL, 0 );
+		}
+		else if( strcmp( args[index], "-s") == 0  && (argc > index) )
+		{
+			config.size = strtol( args[++index], NULL, 0 );
 		}
 		else if( strcmp( args[index], "--task") == 0  && (argc > index) )
 		{
@@ -163,6 +177,11 @@ int main( int argc, char **args )
 	if( config.cmd_mask == 0 )
 	{
 		config.cmd_mask |= LKM_TASK_STRUCT;
+	}
+
+	if( config.size == 0 && config.virtual_address != 0 )
+	{
+		config.size = 4096;
 	}
 
 	// opens the sysfs file that is provided by the linux module
@@ -219,6 +238,21 @@ int main( int argc, char **args )
 		{
 			printf( "ERROR: unable to write into lkm_pid; 0x%08x\n", errno );
 		}
+
+		memset( filename_buf, 0, 200);
+		snprintf( filename_buf, 200, "%s/mem_dump.txt", operation.dir_name );
+
+		out_fd = open( filename_buf, O_WRONLY | O_CREAT );
+		if( out_fd < 0 )
+		{
+			printf( "ERROR: Failed to open export file\n" );
+			break;
+		}
+
+		// perform the user space aspect of the system
+		usr_dump_process_memory( out_fd, config.pid, config.virtual_address, config.size );
+
+		close( out_fd );
 
 		// delay between iterations
 		sleep( config.delay );
