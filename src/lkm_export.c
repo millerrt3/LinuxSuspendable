@@ -384,19 +384,26 @@ int lkm_export_task_struct( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	writeAmt = lkm_file_write( file,"\nrcu_read_lock_nesting: ", strlen("\nrcu_read_lock_nesting: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_nesting), sizeof(int), p_offset );
 
-	// TODO - Need to finish the PREEMPT RCU section
-#if 0
-	writeAmt = lkm_file_write( file,"\nrcu_read_lock_unlock->blocked: ", strlen("\nrcu_read_lock_unlock->blocked: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.blocked), sizeof(bool), p_offset );
+	writeAmt = lkm_file_write( file,"\nrcu_read_unlock_special: ", strlen("\nrcu_read_unlock_special: "), p_offset );
+	writeAmt = lkm_file_write( file,"\n\tblocked: ", strlen("\n\tblocked: "), p_offset );
+	if (task_ptr->rcu_read_unlock_special.b.blocked)
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
+	else
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
+	writeAmt = lkm_file_write( file,"\n\tneed_qs: ", strlen("\n\tneed_qs: "), p_offset );
+	if (task_ptr->rcu_read_unlock_special.b.need_qs)
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
+	else
+		writeAmt = lkm_file_write( file,"true", strlen("true"), p_offset );
 
-	writeAmt = lkm_file_write( file,"\nrcu_read_lock_unlock->need_qs: ", strlen("\nrcu_read_lock_unlock->need_qs: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_read_lock_unlock_special.b.need_qs), sizeof(bool), p_offset );
-#endif
+	writeAmt = lkm_file_write( file,"\nrcu_node_entry: ", strlen("\nrcu_node_entry: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_node_entry), sizeof(struct list_head), p_offset );
 
+	writeAmt = lkm_file_write( file,"\nrcu_blocked_node: ", strlen("\nrcu_blocked_node: "), p_offset );
+	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_blocked_node), sizeof(struct rcu_node*), p_offset );
 #endif
 
 #ifdef CONFIG_TASKS_RCU
-	// TODO -- task_ptr->rcu_blocked_node has a significant amount of stuff in it
 	writeAmt = lkm_file_write( file,"\nrcu_tasks_nvcsw: ", strlen("\nrcu_tasks_nvcsw: "), p_offset );
 	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->rcu_tasks_nvcsw), sizeof(unsigned long), p_offset );
 #endif
