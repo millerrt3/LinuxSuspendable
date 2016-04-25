@@ -72,6 +72,8 @@ struct task_struct* lkm_get_task_struct( int pid );
  */
 unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtual_address );
 
+// int lkm_dump_virtual_memory( struct task_struct* task_ptr, unsigned long virtual_address, int size, LKM_FILE file, unsigned long long *p_offset );
+
 int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler ); 
 
 int lkm_for_each_vma_page_in_task( struct task_struct* task_ptr, vmaPageCallback handler ); 

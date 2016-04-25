@@ -918,6 +918,8 @@ int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	int writeAmt = 0;
 	int index = 0;
 	char buffer[100];
+    
+    // lkm_dump_virtual_memory( task_ptr, 0x00010000, 4096, file, p_offset );
 
 	// export mm attributes
 	writeAmt = lkm_file_write( file, "\nmm: ", strlen("\nmm: "), p_offset );
@@ -1713,7 +1715,9 @@ int lkm_export_vm_area_struct( struct vm_area_struct *ptr, LKM_FILE file, unsign
         memset( buffer, 0, 200 );
         sprintf( buffer, "\n\t\t\tvpage_addr=%lu, phys_addr=%lu, pg_size=%lu", vpage, phys, PAGE_SIZE );
         
-        writeAmt = lkm_file_write( file,buffer, strlen(buffer), p_offset );
+        writeAmt = lkm_file_write( file, buffer, strlen(buffer), p_offset );
+        
+        // lkm_dump_virtual_memory( struct task_struct* task_ptr, 0x00010000, 4096, file, p_offset );
         
     }
 

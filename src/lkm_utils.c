@@ -5,6 +5,7 @@
 #include <linux/pid.h>
 #include <linux/sched.h>  // tasklist_lock
 #include <linux/memory.h> // virt_to_phys
+#include <linux/ptrace.h>
 
 #include "types.h"
 #include "lkm_utils.h"
@@ -76,6 +77,67 @@ unsigned long lkm_virtual_to_physical( struct mm_struct *mm, unsigned long virtu
     
     return phys; 
 }
+
+#if 0
+int lkm_dump_virtual_memory( struct task_struct* task_ptr, unsigned long virtual_address, int size, LKM_FILE file, unsigned long long *p_offset )
+{
+    
+    struct mm_struct *mm = 0;
+    unsigned long addr = virtual_address;
+    int this_len = 0;
+    unsigned long page = 0;
+    int rv = 0;
+    
+    if( task_ptr == 0 || file == 0 )
+        return INVALID_ARG;
+    
+    // open or init for reads
+    mm = mm_access( task_ptr, PTRACE_MODE_ATTACH);
+    atomic_inc( &mm->mm_count );
+    mmput( mm );
+    
+    // TODO - Determine if the destination buffer must be in kernel memory
+    page = __get_free_page( GFP_TEMPORARY );
+    if( !page )
+        return -ENOMEM;
+    
+    if (!atomic_inc_not_zero(&mm->mm_users))
+        rv = -1;
+ 
+    // perform the specified read operation
+    while( size > 0 && rv == 0 )
+    {
+        // determine correct number of bytes to read
+        this_len = min_t( int, size, PAGE_SIZE );
+        
+        // read the next portion of data
+        this_len = access_remote_vm( mm, addr, (void*)page, this_len, 0 );
+        if( this_len == 0 )
+        {
+            printk( KERN_WARNING "lkm_dump_virtual_memory->Failed to access the remove vma.\n" );
+            rv = -2;
+            break;
+        }
+
+        // write content to the provided file
+        // TODO - Perform some steps to make the output cleaner.
+        lkm_file_ascii_write( file, (void*)page, this_len, p_offset );
+        lkm_file_write( file, "\n", strlen("\n"), p_offset );
+        
+        // update internal state for the loop
+        addr += this_len;
+        size -= this_len;        
+        
+    }
+
+    // cleanup
+    mmput(mm);
+    free_page( page );
+    
+    return rv;
+    
+}
+#endif
 
 int lkm_for_each_vma_in_task( struct task_struct* task_ptr, vmaCallback handler )
 {
