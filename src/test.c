@@ -8,20 +8,76 @@
 #include <fcntl.h>
 #include <time.h>
 
+#define DEFAULT_COUNT = 0;
+#define MALLOC_SIZE (0x100000)
+#define STACK_SIZE (0x10000)
+
+void sigint_handler( int signum )
+{
+	printf( "Interrupt Triggered\n" );
+	return;
+}
+
 int main()
 {
 
-	char buffer[200];
+	struct sigaction ss;
+
+	int fd = -1;
+	char buffer[STACK_SIZE];
 	int pid = getpid();
+	char *buf_malloc = 0;
+	int count = DEFAULT_COUNT;
 
-	memset( buffer, 0xde, 200 );
-
-
-	while( 1 )
+	// accept count as argument if specified
+	if( argc > 1 )
 	{
-		printf("Process %d running\n", pid );
-		sleep(1);
+		count = atoi( args[1] );
 	}
+
+	// initialize all variables initial state
+	memset( buffer, 0xde, STACK_SIZE );
+	memset( &ss, 0, sizeof(struct sigaction));
+
+	// update the stack with known pattern for verification purposes
+	memset( buffer, 0xde, STACK_SIZE / 2 );
+	memset( buffer + (STACK_SIZE / 2), 0xab, STACK_SIZE / 2 )
+
+	// allocate a buffer
+	buf_malloc = malloc( MALLOC_SIZE );
+	if( buf_malloc == NULL )
+	{
+		printf( "Unable to acquire required amount of memory\n" );
+		return 0;
+	}
+
+	// fill malloc'd buffer with known pattern for verification purposes.
+	memset( buf_malloc, 0x12, MALLOC_SIZE );
+
+	// setup signal handler for testing purposes
+	ss.sa_handler = sigint_handler;
+	ss.sa_flags = SA_RESTART;
+	sigaction( SIGINT, &ss, NULL );
+
+	fd = open( "bashrc", O_RDONLY );
+	if( fd < 0 )
+	{
+		printf( "Unable to open bashrc\n ");
+	}
+
+	while( count > 0 )
+	{
+		printf("pid: %d, iterations remaining: %d\n", pid, count );
+		sleep(1);
+		count -= 1;
+	}
+
+	if( fd >= 0 )
+	{
+		close(fd);
+	}
+
+	free( buf_malloc );
 
 	return 0;
 	
