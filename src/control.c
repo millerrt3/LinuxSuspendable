@@ -27,7 +27,8 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include "../types.h"
+#include "types.h"
+#include "usr_utils.h"
 
 /**
  * @brief Represents the format of an operation passed through the sysfs interface
@@ -45,6 +46,8 @@ typedef struct
 	int cmd_mask;      /**< Mask specifying which of the process elements should be exported */
 	int repeat_count;  /**< How many times should the operation be repeated */
 	int delay;         /**< Lenth of the delay in between operations */
+	unsigned int size;
+	unsigned int virtual_address;
 	
 } CTRL_Config_t;
 
@@ -66,14 +69,14 @@ void print_help()
 	printf( "running process.                                        \n" );
 	printf( "\n");
 	printf( "SYNOPSIS:\n");
-	printf( "\tcontrol [options] [targets]\n" );
+	printf( "\ttskdmp [options] [targets]\n" );
 	printf( "\n");
 	printf( "OPTIONS:\n" );
 	printf( "\t-c, Number of sequential times that the target processes\n" );
 	printf( "\t    data should be exported. Default is 1.\n");
 	printf( "\n");
 	printf( "\t-p, PID of the process that should be targeted for export.\n");
-	printf( "\t    The default action is to profile the \"control\" process.\n");
+	printf( "\t    The default action is to profile the \"tskdmp\" process.\n");
 	printf( "\n");
 	printf( "\t-d, Number of seconds between each call to module for an\n");
 	printf( "\t    export to take place. Default is 1 second.");
@@ -81,6 +84,8 @@ void print_help()
 	printf( "TARGETS:\n" );
 	printf( "\t--task, A high level export of the processes task_struct will\n");
 	printf( "\t    be performed. Enabled by default.\n");
+    printf( "\t--mem,  A detailed export of the processes memory will\n");
+	printf( "\t    be performed.\n");
 	printf( "\n");
 	printf( "AUTHORS:\n" );
 	printf( "\tCameron Whipple, Robert Miller\n" );
@@ -97,6 +102,8 @@ int main( int argc, char **args )
 	int index = 1;
 	LKM_Operation_t operation;
 	CTRL_Config_t config;
+	char filename_buf[200];
+	int out_fd = 0;
 
 	memset( &config, 0, sizeof(CTRL_Config_t) );
 
@@ -112,21 +119,36 @@ int main( int argc, char **args )
 		if( strcmp( args[index], "-p" ) == 0 && (argc > index) )
 		{
 			config.pid = atoi( args[++index] );
-			printf( "PID: %d\n", config.pid );
+			// printf( "PID: %d\n", config.pid );
 		}
 		else if( strcmp( args[index], "-c") == 0  && (argc > index) )
 		{
 			config.repeat_count = atoi( args[++index] );
-			printf( "repeat_count: %d\n", config.repeat_count );
+			// printf( "repeat_count: %d\n", config.repeat_count );
 		}
 		else if( strcmp( args[index], "-d") == 0  && (argc > index) )
 		{
 			config.delay = atoi( args[++index] );
-			printf( "delay: %d\n", config.delay );
+			// printf( "delay: %d\n", config.delay );
 		}
+	#if 0
+		else if( strcmp( args[index], "-v") == 0  && (argc > index) )
+		{
+			// config.virtual_address = atoi( args[++index] );
+			config.virtual_address = strtol( args[++index], NULL, 0 );
+		}
+		else if( strcmp( args[index], "-s") == 0  && (argc > index) )
+		{
+			config.size = strtol( args[++index], NULL, 0 );
+		}
+	#endif
 		else if( strcmp( args[index], "--task") == 0  && (argc > index) )
 		{
 			config.cmd_mask |= LKM_TASK_STRUCT;
+		}
+		else if( strcmp( args[index], "--mem") == 0  && (argc > index) )
+		{
+			config.cmd_mask |= LKM_TASK_MEMORY;
 		}
 
 		index++;
@@ -157,6 +179,11 @@ int main( int argc, char **args )
 	if( config.cmd_mask == 0 )
 	{
 		config.cmd_mask |= LKM_TASK_STRUCT;
+	}
+
+	if( config.size == 0 && config.virtual_address != 0 )
+	{
+		config.size = 4096;
 	}
 
 	// opens the sysfs file that is provided by the linux module
@@ -212,6 +239,30 @@ int main( int argc, char **args )
 		if( writeAmt < sizeof(LKM_Operation_t) )
 		{
 			printf( "ERROR: unable to write into lkm_pid; 0x%08x\n", errno );
+		}
+
+		// if the user specified they wanted the memory contents
+		// dumped then we want the control application to dump
+		// everything but the gnueabi libraries.
+		if( config.cmd_mask & LKM_TASK_MEMORY )
+		{
+
+			memset( filename_buf, 0, 200);
+			snprintf( filename_buf, 200, "%s/memory_contents.txt", operation.dir_name );
+
+			// open/create the file
+			out_fd = open( filename_buf, O_WRONLY | O_CREAT );
+			if( out_fd < 0 )
+			{
+				printf( "ERROR: Failed to open export file\n" );
+				break;
+			}
+
+			// perform the operation of dumping all the memory
+			usr_dump_all_memory( out_fd, config.pid );
+
+			// close the file
+			close( out_fd );
 		}
 
 		// delay between iterations

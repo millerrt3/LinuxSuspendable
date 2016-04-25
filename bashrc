@@ -17,7 +17,7 @@
 # alias cp='cp -i'
 # alias mv='mv -i'
 
-alias install='insmod inspect/linux_inspection_module.ko'
+alias install='insmod src/linux_inspection_module.ko'
 alias remove='rmmod linux_inspection_module'
-alias go='./control -c 1 -d 3 --task'
+alias go='./tskdmp -c 1 -d 3 --task'
 alias cls='clear'
