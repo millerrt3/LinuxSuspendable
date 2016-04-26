@@ -7,18 +7,20 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <time.h>
+#include <signal.h>
 
-#define DEFAULT_COUNT = 0;
+#define DEFAULT_COUNT 60
 #define MALLOC_SIZE (0x100000)
 #define STACK_SIZE (0x10000)
 
 void sigint_handler( int signum )
 {
 	printf( "Interrupt Triggered\n" );
+	exit(0);
 	return;
 }
 
-int main()
+int main(int argc, char** args)
 {
 
 	struct sigaction ss;
@@ -41,7 +43,7 @@ int main()
 
 	// update the stack with known pattern for verification purposes
 	memset( buffer, 0xde, STACK_SIZE / 2 );
-	memset( buffer + (STACK_SIZE / 2), 0xab, STACK_SIZE / 2 )
+	memset( buffer + (STACK_SIZE / 2), 0xab, STACK_SIZE / 2 );
 
 	// allocate a buffer
 	buf_malloc = malloc( MALLOC_SIZE );
@@ -67,7 +69,10 @@ int main()
 
 	while( count > 0 )
 	{
-		printf("pid: %d, iterations remaining: %d\n", pid, count );
+		char tmp_buf;
+		read(fd, &tmp_buf, 1);
+
+		printf("pid: %d, iterations remaining: %d\n\t%c\n", pid, count, tmp_buf );
 		sleep(1);
 		count -= 1;
 	}

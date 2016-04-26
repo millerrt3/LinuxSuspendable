@@ -17,3 +17,4 @@ clean:
 	rm -f $(INSPECT_BASE)/modules.order
 	rm -f $(INSPECT_BASE)/Module.symvers
 	rm -f tskdmp
+	rm -f test
