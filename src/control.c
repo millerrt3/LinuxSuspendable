@@ -84,7 +84,7 @@ void print_help()
 	printf( "TARGETS:\n" );
 	printf( "\t--task, A high level export of the processes task_struct will\n");
 	printf( "\t    be performed. Enabled by default.\n");
-    printf( "\t--mem,  A detailed export of the processes memory will\n");
+   printf( "\t--mem,  A detailed export of the processes memory will\n");
 	printf( "\t    be performed.\n");
 	printf( "\n");
 	printf( "AUTHORS:\n" );
