@@ -74,6 +74,9 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
     return count;
   }
 
+  // prevent the task from being scheduled while dumping
+  set_task_state(task_ptr, TASK_UNINTERRUPTIBLE);
+
   // start dumping corresponding sections of the process
   if( (rv == 0) && (lkm_opstruct.cmd & LKM_TASK_STRUCT) )
   {
@@ -121,6 +124,9 @@ static ssize_t operation_store(struct kobject *kobj, struct kobj_attribute *attr
     lkm_file_close( file );
 
   }
+
+  // reset the process state to allow it to be scheduled again
+  set_task_state(task_ptr, TASK_RUNNING);
 
   // release lock over the task_struct listing
   rcu_read_unlock();
