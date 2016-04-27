@@ -1191,21 +1191,20 @@ int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigne
 	int writeAmt = 0;
 	int index = 0;
 	char buffer[100];
-    
-    // lkm_dump_virtual_memory( task_ptr, 0x00010000, 4096, file, p_offset );
 
+	// retrieve protected reference to the memory context
+	struct mm_struct *mm_ptr = get_task_mm( task_ptr );
+	if( mm_ptr == NULL )
+	{
+		printk( KERN_WARNING "lkm_export_task_memory->Failed to acquire memory context\n" );
+		return NO_MM_ELEMENT;
+	}
+ 
 	// export mm attributes
 	writeAmt = lkm_file_write( file, "\nmm: ", strlen("\nmm: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->mm), sizeof(struct mm_struct*), p_offset );
-	if( lkm_export_mm_struct( task_ptr->mm, file, p_offset ) != 0 )
+	writeAmt = lkm_file_ascii_write( file, (char*)&(mm_ptr), sizeof(struct mm_struct*), p_offset );
+	if( lkm_export_mm_struct( mm_ptr, file, p_offset ) != 0 )
 		printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export the mm struct\n" );
-
-#if 0
-	writeAmt = lkm_file_write( file, "\nactive_mm: ", strlen("\nactive_mm: "), p_offset );
-	writeAmt = lkm_file_ascii_write( file, (char*)&(task_ptr->active_mm), sizeof(struct mm_struct*), p_offset );
-	if( lkm_export_mm_struct( task_ptr->active_mm, file, p_offset ) != 0 )
-		printk( KERN_WARNING "ERROR: lkm_export_task_memory->Failed to export the active_mm struct\n" );
-#endif
     
 	// export the vmacache structures
 	for( index = 0; index < VMACACHE_SIZE; index++ )
@@ -1224,6 +1223,8 @@ int lkm_export_task_memory( struct task_struct *task_ptr, LKM_FILE file, unsigne
 			printk( KERN_WARNING "ERROR: lkm_export_task_memory->exporting vm_area_struct failed\n" );
 
 	}
+
+	mmput( mm_ptr );
 
 	return 0;
     
