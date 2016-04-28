@@ -41,6 +41,7 @@ typedef enum
   INVALID_ARG      = -3, /**< Invalid argument provided to the function */
   SIG_INSTALL_FAIL = -4, /**< Installation of a singal handler failed */
   FILE_NOT_FOUND   = -5, 
+  NO_MM_ELEMENT    = -6,
 } Status;
 
 #endif
