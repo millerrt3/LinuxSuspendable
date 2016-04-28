@@ -1,0 +1,460 @@
+
+state: 02000000 (stopped)
+stack: 00e053a8
+flags: 00014000
+	PF_SUPERPRIV | PF_RANDOMIZE | 
+ptrace: 00000000
+wake_entry: 00000000
+on_cpu: 01000000
+last_wakee: 003652b0
+wakee_flips: 02000000
+wakee_flip_decay_ts: e9697600
+wake_cpu: 01000000
+on_rq: 01000000
+prio: 78000000
+static_prio: 78000000
+rt_priority: 00000000
+sched_class: cc385980
+se: 0004000000004000010000000000000000000000280f00b6280f00b601000000d7500b52da460000ba5e5e0000000000d239431303000000ba5e5e000000000002000000000000000100000080f547b080e1c9b100000000d7500b52da4600000000000000000000ff030000f303000037530000375300002052000000000000
+rt: 88bd73a888bd73a800000000000000000a00000000000000
+sched_task_group: 80e4c9b1
+dl: a8bd73a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000be73a800000000000000000000000000000000000000000000000000000000703a068098a600b6000000002cbe73a82cbe73a801000000ffffffff0000000000000000000000000000000000000000
+btrace_seq: 00000000
+policy: 00000000
+nr_cpus_allowed: 04000000
+cpus_allowed: 0f000000
+rcu_read_lock_nesting: 01000000
+rcu_read_unlock_special: 
+	blocked: true
+	need_qs: true
+rcu_node_entry: 3060848030608480
+rcu_blocked_node: 00608480
+sched_info: 0e00000000000000da270400000000001cc01952da4600000000000000000000
+tasks: 48d38380608fefb1
+pushable_tasks: 8c000000acbe73a8acbe73a8b4be73a8b4be73a8
+pushable_dl_tasks: bcbe73a80000000000000000
+mm: 00985ba8
+active_mm: 00985ba8
+vmacache_seqnum: 06000000
+vmacache: f88959b0
+rss_stat: 10000000bf0000000300000000000000
+exit_state: 00000000
+exit_code: 00000000
+exit_signal: 11000000
+pdeath_signal: 00000000
+jobctl: 00000000
+personality: 00008000
+in_execve: false
+in_iowait: false
+sched_reset_on_fork: false
+sched_contributes_to_load: false
+atomic_flags: 00000000
+restart_block: 0c5c038000000000a84b145502000000000000000000000000000000000000000000000000000000
+pid: bb570000
+tgid: bb570000
+real_parent: 00ec68a8
+parent: 00ec68a8
+children: 50bf73a850bf73a8
+sibling: 90ee68a890ee68a8
+group_leader: c0bc73a8
+ptraced: 64bf73a864bf73a8
+ptrace_entry: 6cbf73a86cbf73a8
+pids: 000000004824dfb14024dfb1
+thread_group: 98bf73a898bf73a8
+thread_node: 0c581bb50c581bb5
+vfork_done: 00000000
+set_child_tid: 7822f576
+clear_child_tid: 00000000
+utime: 00000000
+stime: 01000000
+utimescaled: 00000000
+stimescaled: 01000000
+gtime: 00000000
+nvcsw: 00000000
+nivcsw: 10000000
+start_time: 6506d958da460000
+real_start_time: 7209d958da460000
+min_flt: 68000000
+maj_flt: 00000000
+cputime_expires: 00000000000000000000000000000000
+	utime: 00000000
+	stime: 00000000
+	sum_exec_runtime: 0000000000000000
+cpu_timers[0]: 00c073a800c073a8
+cpu_timers[1]: 08c073a808c073a8
+cpu_timers[2]: 10c073a810c073a8
+real_cred: 00016cb0
+cred: 00016cb0
+comm: tskdmp
+link_count: 00000000
+total_link_count: 00000000
+sysvsem: 00000000
+sysvshm: 40c073a840c073a8
+last_switch_count: 00000000
+thread: 
+	address: 00000000
+	trap_no: 06000000
+	error_code: 00000000
+	debug: 00000000
+		hbp[0]: 00000000
+		hbp[1]: 00000000
+		hbp[2]: 00000000
+		hbp[3]: 00000000
+		hbp[4]: 00000000
+		hbp[5]: 00000000
+		hbp[6]: 00000000
+		hbp[7]: 00000000
+		hbp[8]: 00000000
+		hbp[9]: 00000000
+		hbp[10]: 00000000
+		hbp[11]: 00000000
+		hbp[12]: 00000000
+		hbp[13]: 00000000
+		hbp[14]: 00000000
+		hbp[15]: 00000000
+		hbp[16]: 00000000
+		hbp[17]: 00000000
+		hbp[18]: 00000000
+		hbp[19]: 00000000
+		hbp[20]: 00000000
+		hbp[21]: 00000000
+		hbp[22]: 00000000
+		hbp[23]: 00000000
+		hbp[24]: 00000000
+		hbp[25]: 00000000
+		hbp[26]: 00000000
+		hbp[27]: 00000000
+		hbp[28]: 00000000
+		hbp[29]: 00000000
+		hbp[30]: 00000000
+		hbp[31]: 00000000
+fs: 
+	users: 01000000
+	lock: 00000000000000000000000000000000030000004024dfb1
+	seq: 00000000
+	umask: 12000000
+	in_exec: 00000000
+	root: 
+		mnt: 
+			mnt_root: 00606eb5
+			mnt_sb: 001ca6b5
+			mnt_flags: 08100000
+		dentry:
+			d_flags: 00002000
+			d_seq: 02000000
+			d_hash: 0000000000000000
+			d_parent: 00606eb5
+			d_name: 
+				hash: 00000000
+				len: 01000000
+				name: /
+			d_inode: 98406fb5
+				d_iname: /
+			d_lockref: 18011801000000000000000000000000555555555555555586000000
+			d_op: 00000000
+			d_sb: 001ca6b5
+			d_time: 55555555
+			d_fsdata: 00000000
+			d_lru: 7c606eb57c606eb5
+			d_child: 84606eb584606eb5
+			d_subdirs: 44c95bac24616eb5
+			d_u: 0000000054416fb5
+	pwd: 
+		mnt: 
+			mnt_root: 00606eb5
+			mnt_sb: 001ca6b5
+			mnt_flags: 08100000
+		dentry:
+			d_flags: c0402800
+			d_seq: 02000000
+			d_hash: 0000000008ccf9b5
+			d_parent: 60d472b3
+			d_name: 
+				hash: 5de390c3
+				len: 10000000
+				name: LinuxSuspendable
+			d_inode: 38ed4cac
+				d_iname: LinuxSuspendable
+			d_lockref: 00000000000000000000000000000000555555555555555543000000
+			d_op: 00000000
+			d_sb: 001ca6b5
+			d_time: 55555555
+			d_fsdata: 00000000
+			d_lru: 3ca45bacdca45bac
+			d_child: ecd472b344a45bac
+			d_subdirs: 84c0dca4248659ac
+			d_u: 00000000f4ed4cac
+files: 
+	count: 01000000
+	fdt[0]: 
+		f_u: 0000000000000000
+		f_path: 
+		mnt: 
+			mnt_root: 80a75db5
+			mnt_sb: 0090b2b5
+			mnt_flags: 25100000
+		dentry:
+			d_flags: 80005000
+			d_seq: 02000000
+			d_hash: 00000000e064f3b5
+			d_parent: 80a75db5
+			d_name: 
+				hash: 31000000
+				len: 01000000
+				name: 1
+			d_inode: a88742ac
+				d_iname: 1
+			d_lockref: 00000000000000000000000000000000555555555555555503000000
+			d_op: 00000000
+			d_sb: 0090b2b5
+			d_time: 55555555
+			d_fsdata: 00000000
+			d_lru: dc7ec1a4dc7ec1a4
+			d_child: 047872ac040de6a4
+			d_subdirs: ec7ec1a4ec7ec1a4
+			d_u: 00000000648842ac
+		f_inode: a88742ac
+		f_op: d8e35b80
+		f_lock: 000000000000000000000000000000000000000000000000
+		f_count: 0e000000
+		f_flags: 02040000
+		f_mode: 03000600
+		f_pos_lock: 0000000000000000000000000000000000000000
+		f_pos: 0000000000000000
+		f_owner: 000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000
+		f_cred: 0004abb3
+		f_ra: 000000000000000000000000000000000000000000000000ffffffffffffffff
+		f_version: 0000000000000000
+		private_data: c0bd56b0
+		f_ep_links: bc2be4b1bc2be4b1
+		f_tfile_llink: c42be4b1c42be4b1
+	fdt[1]: 
+		f_u: 0000000000000000
+		f_path: 
+		mnt: 
+			mnt_root: 80a75db5
+			mnt_sb: 0090b2b5
+			mnt_flags: 25100000
+		dentry:
+			d_flags: 80005000
+			d_seq: 02000000
+			d_hash: 00000000e064f3b5
+			d_parent: 80a75db5
+			d_name: 
+				hash: 31000000
+				len: 01000000
+				name: 1
+			d_inode: a88742ac
+				d_iname: 1
+			d_lockref: 00000000000000000000000000000000555555555555555503000000
+			d_op: 00000000
+			d_sb: 0090b2b5
+			d_time: 55555555
+			d_fsdata: 00000000
+			d_lru: dc7ec1a4dc7ec1a4
+			d_child: 047872ac040de6a4
+			d_subdirs: ec7ec1a4ec7ec1a4
+			d_u: 00000000648842ac
+		f_inode: a88742ac
+		f_op: d8e35b80
+		f_lock: 000000000000000000000000000000000000000000000000
+		f_count: 0e000000
+		f_flags: 02040000
+		f_mode: 03000600
+		f_pos_lock: 0000000000000000000000000000000000000000
+		f_pos: 0000000000000000
+		f_owner: 000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000
+		f_cred: 0004abb3
+		f_ra: 000000000000000000000000000000000000000000000000ffffffffffffffff
+		f_version: 0000000000000000
+		private_data: c0bd56b0
+		f_ep_links: bc2be4b1bc2be4b1
+		f_tfile_llink: c42be4b1c42be4b1
+	fdt[2]: 
+		f_u: 0000000000000000
+		f_path: 
+		mnt: 
+			mnt_root: 80a75db5
+			mnt_sb: 0090b2b5
+			mnt_flags: 25100000
+		dentry:
+			d_flags: 80005000
+			d_seq: 02000000
+			d_hash: 00000000e064f3b5
+			d_parent: 80a75db5
+			d_name: 
+				hash: 31000000
+				len: 01000000
+				name: 1
+			d_inode: a88742ac
+				d_iname: 1
+			d_lockref: 00000000000000000000000000000000555555555555555503000000
+			d_op: 00000000
+			d_sb: 0090b2b5
+			d_time: 55555555
+			d_fsdata: 00000000
+			d_lru: dc7ec1a4dc7ec1a4
+			d_child: 047872ac040de6a4
+			d_subdirs: ec7ec1a4ec7ec1a4
+			d_u: 00000000648842ac
+		f_inode: a88742ac
+		f_op: d8e35b80
+		f_lock: 000000000000000000000000000000000000000000000000
+		f_count: 0e000000
+		f_flags: 02040000
+		f_mode: 03000600
+		f_pos_lock: 0000000000000000000000000000000000000000
+		f_pos: 0000000000000000
+		f_owner: 000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000
+		f_cred: 0004abb3
+		f_ra: 000000000000000000000000000000000000000000000000ffffffffffffffff
+		f_version: 0000000000000000
+		private_data: c0bd56b0
+		f_ep_links: bc2be4b1bc2be4b1
+		f_tfile_llink: c42be4b1c42be4b1
+	fdt[3]: 
+		f_u: 0000000000000000
+		f_path: 
+		mnt: 
+			mnt_root: a00a63b5
+			mnt_sb: 00dc15b5
+			mnt_flags: 27100000
+		dentry:
+			d_flags: c4004800
+			d_seq: 02000000
+			d_hash: 0000000060f2fcb5
+			d_parent: 40fbeaa4
+			d_name: 
+				hash: f6aacd1c
+				len: 09000000
+				name: operation
+			d_inode: 40cc73ac
+				d_iname: operation
+			d_lockref: 00000000000000000000000000000000555555551515555501000000
+			d_op: 00da5980
+			d_sb: 00dc15b5
+			d_time: 51545555
+			d_fsdata: 80ec43a8
+			d_lru: d8cc0cb5bccbe9a4
+			d_child: ccfbeaa4ccfbeaa4
+			d_subdirs: ec1ee2a4ec1ee2a4
+			d_u: 00000000fccc73ac
+		f_inode: 40cc73ac
+		f_op: 74da5980
+		f_lock: 000000000000000000000000000000000000000000000000
+		f_count: 01000000
+		f_flags: 02000000
+		f_mode: 1f800700
+		f_pos_lock: 0000000000000000000000000000000000000000
+		f_pos: 0000000000000000
+		f_owner: 000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000
+		f_cred: 00016cb0
+		f_ra: 000000000000000000000000000000000000000000000000ffffffffffffffff
+		f_version: 0000000000000000
+		private_data: 00d578b0
+		f_ep_links: bcd776b0bcd776b0
+		f_tfile_llink: c4d776b0c4d776b0
+	fdtab: 
+		max_fds: 20000000
+		close_on_exec: 5c2147b0
+		open_fds: 602147b0
+		rcu: 0000000000000000
+	file_lock: 000000000000000000000000000000000000000000000000
+	next_fd: 04000000
+	close_on_exec_init: 00000000
+	open_fds_init: 01000000
+nsproxy: 0c438480
+signal: 00581bb5
+sighand: 402f41b0
+blocked: 
+	signal: 0000000000000000
+	signals: 
+real_blocked: 
+	signal: 0000000000000000
+	signals: 
+saved_sigmask: 
+	signal: 0000000000000000
+	signals: 
+pending: 
+	list: 08c173a808c173a8
+	signal: 0000000000000000
+	signals: 
+sas_ss_sp: 00000000
+sas_ss_size: 00000000
+notifier: 00000000
+notifier_data: 00000000
+notifier_mask: 00000000
+task_works: 00000000
+audit_context: 00000000
+seccomp: 0000000000000000
+parent_exec_id: 0d000000
+self_exec_id: 0e000000
+pi_waiters: 00000000
+pi_waiters_leftmost: 00000000
+pi_blocked_on: 00000000
+irq_events: 00000000
+hardirq_enable_ip: 00000000
+hardirq_disable_ip: b8540280
+hardirq_enable_event: 00000000
+hardirq_disable_event: 00000000
+hardirqs_enabled: 00000000
+hardirq_context: 00000000
+softirq_enable_ip: b8540280
+softirq_disable_ip: 00000000
+softirq_enable_event: 00000000
+softirq_disable_event: 00000000
+softirqs_enabled: 01000000
+softirq_context: 00000000
+journal_info: 00000000
+bio_list: 00000000
+plug: 00000000
+reclaim_state: 00000000
+backing_dev_info: 00000000
+io_context: 00000000
+ptrace_message: 00000000
+last_siginfo: 00000000
+ioac: 
+	rchar: 2f16000000000000
+	wchar: 5c2a000000000000
+	syscr: 0c00000000000000
+	syscw: 1c03000000000000
+	read_bytes: 0000000000000000
+	write_bytes: 0030000000000000
+	cancelled_write_bytes: 0000000000000000
+acct_rss_mem1: 30501b0000000000
+acct_vm_mem1: 40907f0000000000
+acct_timexpd: 03000000
+mems_allowed:01000000
+mems_allowed_seq: 00000000
+cpuset_mem_spread_rotor: ffffffff
+cpuset_slab_spread_rotor: ffffffff
+cgroups: 402e26b5
+cg_list: 6893efb14c2e26b5
+robust_list: 00000000
+pi_state_list: b4c273a8b4c273a8
+pi_state_cache: 00000000
+perf_event_ctxp-0: 00000000
+perf_event_ctxp-1: 00000000
+perf_event_mutex: 0000000000000000000000000000000000000000
+perf_event_list: dcc273a8dcc273a8
+preempt_disable_ip: 00000000
+rcu: 0000000000000000
+splice_pipe: 00000000
+task_frag: 0000000000000000
+delays: c09279b0
+nr_dirtied: 03000000
+nr_dirtied_pause: 20000000
+dirty_paused_when: 00000000
+timer_slack_ns: 50c30000
+default_timer_slack_ns: 50c30000
+curr_ret_stack: ffffffff
+ret_stack: 00000000
+ftrace_timestamp: 0000000000000000
+trace_overrun: 00000000
+tracing_graph_pause: 00000000
+trace: 00000000
+trace_recursion: 00000000
+memcg_oom->memcg: 00000000
+memcg_oom->gfp_mask: 00000000
+memcg_oom->order: 00000000
+memcg_oom->may_oom: false
